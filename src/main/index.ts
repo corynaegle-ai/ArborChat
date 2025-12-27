@@ -67,7 +67,14 @@ function createWindow(): void {
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
+  electronApp.setAppUserModelId('com.arborchat')
+
+  // Set dock icon on macOS (app.dock is undefined on Windows/Linux)
+  // This ensures the correct icon shows in the macOS dock during development
+  // Production builds use the .icns file specified in electron-builder.yml
+  if (process.platform === 'darwin' && app.dock) {
+    app.dock.setIcon(iconPng)
+  }
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
