@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: app
+appId: com.arborchat.app
+productName: ArborChat
 directories:
   buildResources: build
 files:
@@ -12,13 +12,15 @@ files:
 asarUnpack:
   - resources/**
 win:
-  executableName: app
+  executableName: ArborChat
+  icon: build/icon.ico
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
 mac:
+  icon: build/icon.icns
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
     - NSCameraUsageDescription: Application requests access to the device's camera.
@@ -33,8 +35,9 @@ linux:
     - AppImage
     - snap
     - deb
-  maintainer: electronjs.org
+  maintainer: arborchat.app
   category: Utility
+  icon: build/icon.png
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
