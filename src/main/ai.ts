@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { BrowserWindow } from 'electron'
 
-const MODEL_NAME = 'gemini-pro'
+const MODEL_NAME = 'gemini-2.0-flash'
 
 export async function validateParams(apiKey: string): Promise<boolean> {
   console.log('[AI] validateParams called')
