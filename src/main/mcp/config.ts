@@ -54,6 +54,17 @@ export function loadMCPConfig(): MCPConfig {
       const data = fs.readFileSync(configPath, 'utf-8')
       const loaded = JSON.parse(data) as Partial<MCPConfig>
 
+      // Merge servers: keep loaded server configs but add any new default servers
+      // that don't exist in the loaded config (e.g., when new servers are added)
+      const mergedServers = loaded.servers || []
+      for (const defaultServer of DEFAULT_MCP_CONFIG.servers) {
+        const existsInLoaded = mergedServers.some((s) => s.name === defaultServer.name)
+        if (!existsInLoaded) {
+          console.log(`[MCP Config] Adding new default server: ${defaultServer.name}`)
+          mergedServers.push(defaultServer)
+        }
+      }
+
       // Merge with defaults to ensure all fields exist
       return {
         ...DEFAULT_MCP_CONFIG,
@@ -63,7 +74,7 @@ export function loadMCPConfig(): MCPConfig {
           ...loaded.autoApprove
         },
         alwaysApproveTools: loaded.alwaysApproveTools || DEFAULT_MCP_CONFIG.alwaysApproveTools,
-        servers: loaded.servers || DEFAULT_MCP_CONFIG.servers
+        servers: mergedServers
       }
     }
   } catch (error) {
