@@ -3,15 +3,24 @@
 import { ipcMain, BrowserWindow } from 'electron'
 import { randomUUID } from 'crypto'
 import { mcpManager } from './manager'
-import { loadMCPConfig, saveMCPConfig, updateMCPConfig, isToolBlocked, isToolAlwaysApproved, addAlwaysApproveTool } from './config'
+import {
+  loadMCPConfig,
+  saveMCPConfig,
+  updateMCPConfig,
+  isToolBlocked,
+  isToolAlwaysApproved,
+  addAlwaysApproveTool
+} from './config'
 import { getToolRiskLevel } from './servers/desktop-commander'
 import { getGitHubToolRiskLevel, GITHUB_MCP_CONFIG } from './servers/github'
+import { saveGitHubToken, deleteGitHubToken, isGitHubConfigured } from './credentials'
 import {
-  saveGitHubToken,
-  deleteGitHubToken,
-  isGitHubConfigured
-} from './credentials'
-import { PendingToolCall, ToolCallResult, MCPConfig, GitHubStatus, GitHubConfigureResult } from './types'
+  PendingToolCall,
+  ToolCallResult,
+  MCPConfig,
+  GitHubStatus,
+  GitHubConfigureResult
+} from './types'
 
 // Pending tool calls awaiting user approval
 const pendingCalls = new Map<string, PendingToolCall>()
@@ -85,9 +94,8 @@ export function setupMCPHandlers(): void {
       }
 
       // Get risk level based on server
-      const riskLevel = serverName === 'github'
-        ? getGitHubToolRiskLevel(toolName)
-        : getToolRiskLevel(toolName)
+      const riskLevel =
+        serverName === 'github' ? getGitHubToolRiskLevel(toolName) : getToolRiskLevel(toolName)
       const win = BrowserWindow.fromWebContents(event.sender)
 
       // Check if we should auto-approve based on risk level or always-approve list
@@ -504,7 +512,6 @@ export function clearPendingCalls(): void {
 export function getPendingCallCount(): number {
   return pendingCalls.size
 }
-
 
 // =====================
 // GitHub Helper Functions

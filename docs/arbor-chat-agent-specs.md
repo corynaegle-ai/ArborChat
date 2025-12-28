@@ -1,4 +1,5 @@
 # Agent System Design Document
+
 ## ArborChat Autonomous Coding Agents
 
 **Design Lead:** Alex Chen
@@ -12,6 +13,7 @@
 This document outlines the design for an **Autonomous Agent System** within ArborChat that enables users to launch self-contained AI agents capable of performing coding tasks independently. Agents operate in their own context windows, allowing users to continue their primary conversations while agents work in the background.
 
 ### Key Value Propositions
+
 - **Parallel Productivity**: Work on multiple tasks simultaneously
 - **Autonomous Operation**: Agents continue working without constant user attention
 - **Contextual Isolation**: Each agent has focused context for its specific task
@@ -24,6 +26,7 @@ This document outlines the design for an **Autonomous Agent System** within Arbo
 ### 2.1 What is an Agent?
 
 An **Agent** is an autonomous AI worker with:
+
 - Its own conversation context and history
 - A defined task or objective
 - Access to MCP tools for code execution
@@ -31,13 +34,13 @@ An **Agent** is an autonomous AI worker with:
 
 ### 2.2 Agent vs Thread
 
-| Aspect | Thread | Agent |
-|--------|--------|-------|
-| Purpose | Focused discussion | Autonomous task execution |
-| User Attention | Required for each response | Only when intervention needed |
-| Context | Branch of main conversation | Self-contained, task-focused |
-| Persistence | Conversational | Task-oriented with completion state |
-| Tool Usage | Manual per-message | Autonomous with approval workflows |
+| Aspect         | Thread                      | Agent                               |
+| -------------- | --------------------------- | ----------------------------------- |
+| Purpose        | Focused discussion          | Autonomous task execution           |
+| User Attention | Required for each response  | Only when intervention needed       |
+| Context        | Branch of main conversation | Self-contained, task-focused        |
+| Persistence    | Conversational              | Task-oriented with completion state |
+| Tool Usage     | Manual per-message          | Autonomous with approval workflows  |
 
 ---
 
@@ -68,14 +71,14 @@ An **Agent** is an autonomous AI worker with:
 
 ### 3.1 State Definitions
 
-| State | Description | User Action Required |
-|-------|-------------|---------------------|
-| `CREATED` | Agent initialized, awaiting first run | None |
-| `RUNNING` | Actively processing, executing tools | None |
-| `WAITING` | Needs user input or tool approval | **Yes** |
-| `PAUSED` | User manually paused execution | Resume action |
-| `COMPLETED` | Task finished successfully | Review results |
-| `FAILED` | Error occurred, cannot continue | Investigate/Retry |
+| State       | Description                           | User Action Required |
+| ----------- | ------------------------------------- | -------------------- |
+| `CREATED`   | Agent initialized, awaiting first run | None                 |
+| `RUNNING`   | Actively processing, executing tools  | None                 |
+| `WAITING`   | Needs user input or tool approval     | **Yes**              |
+| `PAUSED`    | User manually paused execution        | Resume action        |
+| `COMPLETED` | Task finished successfully            | Review results       |
+| `FAILED`    | Error occurred, cannot continue       | Investigate/Retry    |
 
 ---
 
@@ -85,7 +88,7 @@ An **Agent** is an autonomous AI worker with:
 
 Add an "Agent" button next to the existing thread button in the message actions:
 
-```
+````
 ┌─────────────────────────────────────────────────────────────────────┐
 │  Claude's Response Message                                          │
 │  ─────────────────────────────────────────────────────────────────  │
@@ -101,7 +104,7 @@ Add an "Agent" button next to the existing thread button in the message actions:
 │  │  💬 Reply    🧵 Thread    🤖 Launch Agent    📋 Copy        │    │
 │  └─────────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────────┘
-```
+````
 
 ### 4.2 Agent Launch Modal
 
@@ -304,71 +307,65 @@ src/renderer/src/
 ```typescript
 // src/renderer/src/types/agent.ts
 
-export type AgentStatus = 
-  | 'created'
-  | 'running'
-  | 'waiting'
-  | 'paused'
-  | 'completed'
-  | 'failed';
+export type AgentStatus = 'created' | 'running' | 'waiting' | 'paused' | 'completed' | 'failed'
 
-export type AgentToolPermission = 
-  | 'standard'      // Approve dangerous only
-  | 'restricted'    // Approve all file operations
-  | 'autonomous';   // Auto-approve safe + moderate
+export type AgentToolPermission =
+  | 'standard' // Approve dangerous only
+  | 'restricted' // Approve all file operations
+  | 'autonomous' // Auto-approve safe + moderate
 
 export interface AgentContext {
-  seedMessages: Message[];          // Initial context from chat
-  persona?: Persona;                // Active persona if any
-  workingDirectory: string;         // Base path for operations
+  seedMessages: Message[] // Initial context from chat
+  persona?: Persona // Active persona if any
+  workingDirectory: string // Base path for operations
 }
 
 export interface AgentConfig {
-  name: string;
-  instructions: string;
-  context: AgentContext;
-  toolPermission: AgentToolPermission;
-  modelId: string;
+  name: string
+  instructions: string
+  context: AgentContext
+  toolPermission: AgentToolPermission
+  modelId: string
 }
 
 export interface AgentStep {
-  id: string;
-  type: 'thinking' | 'tool_call' | 'tool_result' | 'message';
-  content: string;
-  timestamp: number;
+  id: string
+  type: 'thinking' | 'tool_call' | 'tool_result' | 'message'
+  content: string
+  timestamp: number
   toolCall?: {
-    name: string;
-    args: Record<string, unknown>;
-    status: 'pending' | 'approved' | 'denied' | 'completed' | 'failed';
-    result?: unknown;
-  };
+    name: string
+    args: Record<string, unknown>
+    status: 'pending' | 'approved' | 'denied' | 'completed' | 'failed'
+    result?: unknown
+  }
 }
 
 export interface Agent {
-  id: string;
-  config: AgentConfig;
-  status: AgentStatus;
-  steps: AgentStep[];
-  
+  id: string
+  config: AgentConfig
+  status: AgentStatus
+  steps: AgentStep[]
+
   // Execution state
-  currentStepIndex: number;
-  pendingApprovals: string[];       // Step IDs waiting for approval
-  
+  currentStepIndex: number
+  pendingApprovals: string[] // Step IDs waiting for approval
+
   // Metadata
-  createdAt: number;
-  startedAt?: number;
-  completedAt?: number;
-  error?: string;
-  
+  createdAt: number
+  startedAt?: number
+  completedAt?: number
+  error?: string
+
   // Source reference
-  sourceConversationId: string;
-  sourceMessageId: string;
+  sourceConversationId: string
+  sourceMessageId: string
 }
 
 export interface AgentState {
-  agents: Record<string, Agent>;
-  activeAgentId: string | null;
-  isPanelOpen: boolean;
+  agents: Record<string, Agent>
+  activeAgentId: string | null
+  isPanelOpen: boolean
 }
 ```
 
@@ -393,23 +390,23 @@ type AgentAction =
 
 interface AgentContextType {
   state: AgentState;
-  
+
   // Agent lifecycle
   createAgent: (config: AgentConfig, sourceConversationId: string, sourceMessageId: string) => string;
   startAgent: (agentId: string) => void;
   pauseAgent: (agentId: string) => void;
   resumeAgent: (agentId: string) => void;
   stopAgent: (agentId: string) => void;
-  
+
   // Agent interaction
   sendInstruction: (agentId: string, instruction: string) => void;
   approveStep: (agentId: string, stepId: string) => void;
   denyStep: (agentId: string, stepId: string) => void;
-  
+
   // UI state
   setActiveAgent: (agentId: string | null) => void;
   togglePanel: (open?: boolean) => void;
-  
+
   // Computed
   getAgent: (agentId: string) => Agent | undefined;
   getActiveAgent: () => Agent | undefined;
@@ -451,11 +448,11 @@ function agentReducer(state: AgentState, action: AgentAction): AgentState {
         isPanelOpen: true,
       };
     }
-    
+
     case 'UPDATE_AGENT_STATUS': {
       const agent = state.agents[action.payload.agentId];
       if (!agent) return state;
-      
+
       const updates: Partial<Agent> = { status: action.payload.status };
       if (action.payload.status === 'running' && !agent.startedAt) {
         updates.startedAt = Date.now();
@@ -463,7 +460,7 @@ function agentReducer(state: AgentState, action: AgentAction): AgentState {
       if (action.payload.status === 'completed' || action.payload.status === 'failed') {
         updates.completedAt = Date.now();
       }
-      
+
       return {
         ...state,
         agents: {
@@ -472,15 +469,15 @@ function agentReducer(state: AgentState, action: AgentAction): AgentState {
         },
       };
     }
-    
+
     case 'ADD_AGENT_STEP': {
       const agent = state.agents[action.payload.agentId];
       if (!agent) return state;
-      
+
       const newPendingApprovals = action.payload.step.toolCall?.status === 'pending'
         ? [...agent.pendingApprovals, action.payload.step.id]
         : agent.pendingApprovals;
-      
+
       return {
         ...state,
         agents: {
@@ -493,22 +490,22 @@ function agentReducer(state: AgentState, action: AgentAction): AgentState {
         },
       };
     }
-    
+
     case 'UPDATE_STEP': {
       const agent = state.agents[action.payload.agentId];
       if (!agent) return state;
-      
+
       const updatedSteps = agent.steps.map(step =>
         step.id === action.payload.stepId
           ? { ...step, ...action.payload.updates }
           : step
       );
-      
+
       // Remove from pending if approved/denied
       const updatedPendingApprovals = action.payload.updates.toolCall?.status !== 'pending'
         ? agent.pendingApprovals.filter(id => id !== action.payload.stepId)
         : agent.pendingApprovals;
-      
+
       return {
         ...state,
         agents: {
@@ -521,16 +518,16 @@ function agentReducer(state: AgentState, action: AgentAction): AgentState {
         },
       };
     }
-    
+
     case 'SET_ACTIVE_AGENT':
       return { ...state, activeAgentId: action.payload };
-    
+
     case 'TOGGLE_PANEL':
-      return { 
-        ...state, 
-        isPanelOpen: action.payload !== undefined ? action.payload : !state.isPanelOpen 
+      return {
+        ...state,
+        isPanelOpen: action.payload !== undefined ? action.payload : !state.isPanelOpen
       };
-    
+
     case 'REMOVE_AGENT': {
       const { [action.payload]: removed, ...remainingAgents } = state.agents;
       return {
@@ -539,7 +536,7 @@ function agentReducer(state: AgentState, action: AgentAction): AgentState {
         activeAgentId: state.activeAgentId === action.payload ? null : state.activeAgentId,
       };
     }
-    
+
     case 'SET_ERROR': {
       const agent = state.agents[action.payload.agentId];
       if (!agent) return state;
@@ -556,7 +553,7 @@ function agentReducer(state: AgentState, action: AgentAction): AgentState {
         },
       };
     }
-    
+
     default:
       return state;
   }
@@ -566,10 +563,10 @@ export const AgentContext = createContext<AgentContextType | null>(null);
 
 export function AgentProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(agentReducer, initialState);
-  
+
   // Implementation of context methods...
   // (Full implementation in actual code)
-  
+
   return (
     <AgentContext.Provider value={/* context value */}>
       {children}
@@ -591,96 +588,93 @@ export function useAgentContext() {
 ```typescript
 // src/renderer/src/hooks/useAgentExecution.ts
 
-import { useCallback, useRef, useEffect } from 'react';
-import { Agent, AgentStep, AgentToolPermission } from '../types/agent';
-import { useMCP } from './useMCP';
-import { useAgentContext } from '../contexts/AgentContext';
-import { generateId } from '../utils/id';
+import { useCallback, useRef, useEffect } from 'react'
+import { Agent, AgentStep, AgentToolPermission } from '../types/agent'
+import { useMCP } from './useMCP'
+import { useAgentContext } from '../contexts/AgentContext'
+import { generateId } from '../utils/id'
 
 interface ExecutionState {
-  isExecuting: boolean;
-  abortController: AbortController | null;
+  isExecuting: boolean
+  abortController: AbortController | null
 }
 
 export function useAgentExecution(agentId: string) {
-  const { state, dispatch } = useAgentContext();
-  const { executeTool, getToolRiskLevel } = useMCP();
+  const { state, dispatch } = useAgentContext()
+  const { executeTool, getToolRiskLevel } = useMCP()
   const executionRef = useRef<ExecutionState>({
     isExecuting: false,
-    abortController: null,
-  });
-  
-  const agent = state.agents[agentId];
-  
-  const shouldAutoApprove = useCallback((
-    toolName: string, 
-    permission: AgentToolPermission
-  ): boolean => {
-    const riskLevel = getToolRiskLevel(toolName);
-    
-    switch (permission) {
-      case 'autonomous':
-        return riskLevel === 'safe' || riskLevel === 'moderate';
-      case 'standard':
-        return riskLevel === 'safe';
-      case 'restricted':
-        return false;
-      default:
-        return false;
-    }
-  }, [getToolRiskLevel]);
-  
+    abortController: null
+  })
+
+  const agent = state.agents[agentId]
+
+  const shouldAutoApprove = useCallback(
+    (toolName: string, permission: AgentToolPermission): boolean => {
+      const riskLevel = getToolRiskLevel(toolName)
+
+      switch (permission) {
+        case 'autonomous':
+          return riskLevel === 'safe' || riskLevel === 'moderate'
+        case 'standard':
+          return riskLevel === 'safe'
+        case 'restricted':
+          return false
+        default:
+          return false
+      }
+    },
+    [getToolRiskLevel]
+  )
+
   const executeAgentLoop = useCallback(async () => {
-    if (!agent || executionRef.current.isExecuting) return;
-    
-    executionRef.current.isExecuting = true;
-    executionRef.current.abortController = new AbortController();
-    
+    if (!agent || executionRef.current.isExecuting) return
+
+    executionRef.current.isExecuting = true
+    executionRef.current.abortController = new AbortController()
+
     try {
-      dispatch({ 
-        type: 'UPDATE_AGENT_STATUS', 
-        payload: { agentId, status: 'running' } 
-      });
-      
+      dispatch({
+        type: 'UPDATE_AGENT_STATUS',
+        payload: { agentId, status: 'running' }
+      })
+
       // Build conversation for AI
-      const messages = buildAgentMessages(agent);
-      
+      const messages = buildAgentMessages(agent)
+
       while (!executionRef.current.abortController.signal.aborted) {
         // Get next AI response
-        const response = await callAgentAI(messages, agent.config);
-        
+        const response = await callAgentAI(messages, agent.config)
+
         // Parse response for tool calls
-        const toolCalls = parseToolCalls(response);
-        
+        const toolCalls = parseToolCalls(response)
+
         if (toolCalls.length === 0) {
           // No more tool calls, agent is thinking or complete
           const step: AgentStep = {
             id: generateId(),
             type: 'message',
             content: response,
-            timestamp: Date.now(),
-          };
-          dispatch({ type: 'ADD_AGENT_STEP', payload: { agentId, step } });
-          
+            timestamp: Date.now()
+          }
+          dispatch({ type: 'ADD_AGENT_STEP', payload: { agentId, step } })
+
           // Check if agent considers itself done
           if (isCompletionMessage(response)) {
-            dispatch({ 
-              type: 'UPDATE_AGENT_STATUS', 
-              payload: { agentId, status: 'completed' } 
-            });
-            break;
+            dispatch({
+              type: 'UPDATE_AGENT_STATUS',
+              payload: { agentId, status: 'completed' }
+            })
+            break
           }
-          
-          continue;
+
+          continue
         }
-        
+
         // Process each tool call
         for (const toolCall of toolCalls) {
-          const autoApprove = shouldAutoApprove(
-            toolCall.name, 
-            agent.config.toolPermission
-          );
-          
+          const autoApprove = shouldAutoApprove(toolCall.name, agent.config.toolPermission)
+
           const step: AgentStep = {
             id: generateId(),
             type: 'tool_call',
@@ -689,24 +683,24 @@ export function useAgentExecution(agentId: string) {
             toolCall: {
               name: toolCall.name,
               args: toolCall.args,
-              status: autoApprove ? 'approved' : 'pending',
-            },
-          };
-          
-          dispatch({ type: 'ADD_AGENT_STEP', payload: { agentId, step } });
-          
+              status: autoApprove ? 'approved' : 'pending'
+            }
+          }
+
+          dispatch({ type: 'ADD_AGENT_STEP', payload: { agentId, step } })
+
           if (!autoApprove) {
             // Wait for user approval
-            dispatch({ 
-              type: 'UPDATE_AGENT_STATUS', 
-              payload: { agentId, status: 'waiting' } 
-            });
-            return; // Exit loop, will resume after approval
+            dispatch({
+              type: 'UPDATE_AGENT_STATUS',
+              payload: { agentId, status: 'waiting' }
+            })
+            return // Exit loop, will resume after approval
           }
-          
+
           // Execute tool
-          const result = await executeTool(toolCall.name, toolCall.args);
-          
+          const result = await executeTool(toolCall.name, toolCall.args)
+
           dispatch({
             type: 'UPDATE_STEP',
             payload: {
@@ -716,60 +710,60 @@ export function useAgentExecution(agentId: string) {
                 toolCall: {
                   ...step.toolCall!,
                   status: 'completed',
-                  result,
-                },
-              },
-            },
-          });
-          
+                  result
+                }
+              }
+            }
+          })
+
           // Add result to messages for next iteration
           messages.push({
             role: 'tool',
             content: JSON.stringify(result),
-            toolCallId: step.id,
-          });
+            toolCallId: step.id
+          })
         }
       }
     } catch (error) {
       dispatch({
         type: 'SET_ERROR',
-        payload: { 
-          agentId, 
-          error: error instanceof Error ? error.message : 'Unknown error' 
-        },
-      });
+        payload: {
+          agentId,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }
+      })
     } finally {
-      executionRef.current.isExecuting = false;
+      executionRef.current.isExecuting = false
     }
-  }, [agent, agentId, dispatch, executeTool, shouldAutoApprove]);
-  
+  }, [agent, agentId, dispatch, executeTool, shouldAutoApprove])
+
   const pause = useCallback(() => {
-    executionRef.current.abortController?.abort();
-    dispatch({ 
-      type: 'UPDATE_AGENT_STATUS', 
-      payload: { agentId, status: 'paused' } 
-    });
-  }, [agentId, dispatch]);
-  
+    executionRef.current.abortController?.abort()
+    dispatch({
+      type: 'UPDATE_AGENT_STATUS',
+      payload: { agentId, status: 'paused' }
+    })
+  }, [agentId, dispatch])
+
   const resume = useCallback(() => {
-    executeAgentLoop();
-  }, [executeAgentLoop]);
-  
+    executeAgentLoop()
+  }, [executeAgentLoop])
+
   const stop = useCallback(() => {
-    executionRef.current.abortController?.abort();
-    dispatch({ 
-      type: 'UPDATE_AGENT_STATUS', 
-      payload: { agentId, status: 'completed' } 
-    });
-  }, [agentId, dispatch]);
-  
+    executionRef.current.abortController?.abort()
+    dispatch({
+      type: 'UPDATE_AGENT_STATUS',
+      payload: { agentId, status: 'completed' }
+    })
+  }, [agentId, dispatch])
+
   return {
     execute: executeAgentLoop,
     pause,
     resume,
     stop,
-    isExecuting: executionRef.current.isExecuting,
-  };
+    isExecuting: executionRef.current.isExecuting
+  }
 }
 ```
 
@@ -835,54 +829,47 @@ export function useAgentExecution(agentId: string) {
 export function registerAgentHandlers() {
   // Save agent state
   ipcMain.handle('agent:save', async (_, agent: Agent) => {
-    const agentsPath = path.join(app.getPath('userData'), 'agents');
-    await fs.mkdir(agentsPath, { recursive: true });
-    
-    const filePath = path.join(agentsPath, `${agent.id}.json`);
-    await fs.writeFile(filePath, JSON.stringify(agent, null, 2));
-    
-    return { success: true };
-  });
-  
+    const agentsPath = path.join(app.getPath('userData'), 'agents')
+    await fs.mkdir(agentsPath, { recursive: true })
+
+    const filePath = path.join(agentsPath, `${agent.id}.json`)
+    await fs.writeFile(filePath, JSON.stringify(agent, null, 2))
+
+    return { success: true }
+  })
+
   // Load all agents
   ipcMain.handle('agent:loadAll', async () => {
-    const agentsPath = path.join(app.getPath('userData'), 'agents');
-    
+    const agentsPath = path.join(app.getPath('userData'), 'agents')
+
     try {
-      const files = await fs.readdir(agentsPath);
-      const agents: Agent[] = [];
-      
+      const files = await fs.readdir(agentsPath)
+      const agents: Agent[] = []
+
       for (const file of files) {
         if (file.endsWith('.json')) {
-          const content = await fs.readFile(
-            path.join(agentsPath, file), 
-            'utf-8'
-          );
-          agents.push(JSON.parse(content));
+          const content = await fs.readFile(path.join(agentsPath, file), 'utf-8')
+          agents.push(JSON.parse(content))
         }
       }
-      
-      return agents;
+
+      return agents
     } catch {
-      return [];
+      return []
     }
-  });
-  
+  })
+
   // Delete agent
   ipcMain.handle('agent:delete', async (_, agentId: string) => {
-    const filePath = path.join(
-      app.getPath('userData'), 
-      'agents', 
-      `${agentId}.json`
-    );
-    
+    const filePath = path.join(app.getPath('userData'), 'agents', `${agentId}.json`)
+
     try {
-      await fs.unlink(filePath);
-      return { success: true };
+      await fs.unlink(filePath)
+      return { success: true }
     } catch {
-      return { success: false };
+      return { success: false }
     }
-  });
+  })
 }
 ```
 
@@ -891,6 +878,7 @@ export function registerAgentHandlers() {
 ## 7. Implementation Phases
 
 ### Phase 1: Core Infrastructure (Priority: High)
+
 **Estimated Time: 4-6 hours**
 
 - [ ] Create type definitions (`src/renderer/src/types/agent.ts`)
@@ -900,11 +888,13 @@ export function registerAgentHandlers() {
 - [ ] Implement AgentLaunchModal
 
 **Deliverables:**
+
 - Users can click "Launch Agent" and see a modal
 - Basic agent state management works
 - Agent panel opens/closes
 
 ### Phase 2: Agent Execution Engine (Priority: High)
+
 **Estimated Time: 6-8 hours**
 
 - [ ] Implement useAgentExecution hook
@@ -914,11 +904,13 @@ export function registerAgentHandlers() {
 - [ ] Implement pause/resume/stop functionality
 
 **Deliverables:**
+
 - Agents can execute tools autonomously
 - Auto-approval works based on permission level
 - Users can pause and resume agents
 
 ### Phase 3: Agent UI Components (Priority: High)
+
 **Estimated Time: 4-6 hours**
 
 - [ ] Build AgentHeader with status and controls
@@ -928,11 +920,13 @@ export function registerAgentHandlers() {
 - [ ] Create AgentStatusBadge component
 
 **Deliverables:**
+
 - Full agent UI in side panel
 - Real-time status updates
 - Tool execution visualization
 
 ### Phase 4: Multi-Agent Management (Priority: Medium)
+
 **Estimated Time: 3-4 hours**
 
 - [ ] Build AgentManager component
@@ -941,11 +935,13 @@ export function registerAgentHandlers() {
 - [ ] Handle multiple concurrent agents
 
 **Deliverables:**
+
 - Users can run multiple agents
 - Easy switching between agents
 - Overview of all agent statuses
 
 ### Phase 5: Notifications & Attention (Priority: Medium)
+
 **Estimated Time: 2-3 hours**
 
 - [ ] Implement AgentNotification component
@@ -954,11 +950,13 @@ export function registerAgentHandlers() {
 - [ ] Build quick-approve from notification
 
 **Deliverables:**
+
 - Users notified when agents need attention
 - Quick approval without opening panel
 - Clear visual indicators
 
 ### Phase 6: Persistence & History (Priority: Low)
+
 **Estimated Time: 3-4 hours**
 
 - [ ] Implement IPC handlers for agent persistence
@@ -967,6 +965,7 @@ export function registerAgentHandlers() {
 - [ ] Allow rerunning completed agents
 
 **Deliverables:**
+
 - Agents persist across app restarts
 - View history of past agents
 - Rerun agents with modifications
@@ -980,12 +979,12 @@ export function registerAgentHandlers() {
 ```tsx
 // src/renderer/src/components/agents/AgentLaunchButton.tsx
 
-import React from 'react';
-import { Bot } from 'lucide-react';
+import React from 'react'
+import { Bot } from 'lucide-react'
 
 interface AgentLaunchButtonProps {
-  onLaunch: () => void;
-  disabled?: boolean;
+  onLaunch: () => void
+  disabled?: boolean
 }
 
 export function AgentLaunchButton({ onLaunch, disabled }: AgentLaunchButtonProps) {
@@ -1002,7 +1001,7 @@ export function AgentLaunchButton({ onLaunch, disabled }: AgentLaunchButtonProps
       <Bot className="w-4 h-4" />
       <span>Launch Agent</span>
     </button>
-  );
+  )
 }
 ```
 
@@ -1011,25 +1010,27 @@ export function AgentLaunchButton({ onLaunch, disabled }: AgentLaunchButtonProps
 ```tsx
 // src/renderer/src/components/agents/AgentPanel.tsx
 
-import React from 'react';
-import { X, Pause, Play, Square, Minimize2 } from 'lucide-react';
-import { useAgentContext } from '../../contexts/AgentContext';
-import { useAgentExecution } from '../../hooks/useAgentExecution';
-import { AgentHeader } from './AgentHeader';
-import { AgentMessages } from './AgentMessages';
-import { AgentInput } from './AgentInput';
+import React from 'react'
+import { X, Pause, Play, Square, Minimize2 } from 'lucide-react'
+import { useAgentContext } from '../../contexts/AgentContext'
+import { useAgentExecution } from '../../hooks/useAgentExecution'
+import { AgentHeader } from './AgentHeader'
+import { AgentMessages } from './AgentMessages'
+import { AgentInput } from './AgentInput'
 
 export function AgentPanel() {
-  const { state, togglePanel, getActiveAgent } = useAgentContext();
-  const agent = getActiveAgent();
-  
-  if (!state.isPanelOpen || !agent) return null;
-  
-  const { execute, pause, resume, stop } = useAgentExecution(agent.id);
-  
+  const { state, togglePanel, getActiveAgent } = useAgentContext()
+  const agent = getActiveAgent()
+
+  if (!state.isPanelOpen || !agent) return null
+
+  const { execute, pause, resume, stop } = useAgentExecution(agent.id)
+
   return (
-    <div className="w-[480px] h-full border-l border-zinc-700 
-                    bg-zinc-900 flex flex-col">
+    <div
+      className="w-[480px] h-full border-l border-zinc-700 
+                    bg-zinc-900 flex flex-col"
+    >
       {/* Header */}
       <AgentHeader
         agent={agent}
@@ -1037,21 +1038,23 @@ export function AgentPanel() {
         onResume={resume}
         onStop={stop}
         onMinimize={() => togglePanel(false)}
-        onClose={() => {/* Remove agent */}}
+        onClose={() => {
+          /* Remove agent */
+        }}
       />
-      
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto">
         <AgentMessages agent={agent} />
       </div>
-      
+
       {/* Input */}
-      <AgentInput 
+      <AgentInput
         agentId={agent.id}
         disabled={agent.status === 'completed' || agent.status === 'failed'}
       />
     </div>
-  );
+  )
 }
 ```
 
@@ -1060,45 +1063,48 @@ export function AgentPanel() {
 ```tsx
 // src/renderer/src/components/agents/AgentHeader.tsx
 
-import React from 'react';
-import { 
-  Bot, X, Pause, Play, Square, Minimize2, 
-  Clock, AlertCircle, CheckCircle 
-} from 'lucide-react';
-import { Agent, AgentStatus } from '../../types/agent';
-import { AgentStatusBadge } from './AgentStatusBadge';
-import { formatDuration } from '../../utils/time';
+import React from 'react'
+import {
+  Bot,
+  X,
+  Pause,
+  Play,
+  Square,
+  Minimize2,
+  Clock,
+  AlertCircle,
+  CheckCircle
+} from 'lucide-react'
+import { Agent, AgentStatus } from '../../types/agent'
+import { AgentStatusBadge } from './AgentStatusBadge'
+import { formatDuration } from '../../utils/time'
 
 interface AgentHeaderProps {
-  agent: Agent;
-  onPause: () => void;
-  onResume: () => void;
-  onStop: () => void;
-  onMinimize: () => void;
-  onClose: () => void;
+  agent: Agent
+  onPause: () => void
+  onResume: () => void
+  onStop: () => void
+  onMinimize: () => void
+  onClose: () => void
 }
 
-export function AgentHeader({ 
-  agent, 
-  onPause, 
-  onResume, 
-  onStop, 
+export function AgentHeader({
+  agent,
+  onPause,
+  onResume,
+  onStop,
   onMinimize,
-  onClose 
+  onClose
 }: AgentHeaderProps) {
-  const duration = agent.startedAt 
-    ? (agent.completedAt || Date.now()) - agent.startedAt
-    : 0;
-  
+  const duration = agent.startedAt ? (agent.completedAt || Date.now()) - agent.startedAt : 0
+
   return (
     <div className="p-4 border-b border-zinc-700">
       {/* Title row */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Bot className="w-5 h-5 text-blue-400" />
-          <h2 className="font-medium text-zinc-100 truncate max-w-[280px]">
-            {agent.config.name}
-          </h2>
+          <h2 className="font-medium text-zinc-100 truncate max-w-[280px]">{agent.config.name}</h2>
         </div>
         <div className="flex items-center gap-1">
           <button
@@ -1117,7 +1123,7 @@ export function AgentHeader({
           </button>
         </div>
       </div>
-      
+
       {/* Status row */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -1129,13 +1135,13 @@ export function AgentHeader({
             </span>
           )}
         </div>
-        
+
         <div className="flex items-center gap-1 text-xs text-zinc-500">
           <Clock className="w-3 h-3" />
           {formatDuration(duration)}
         </div>
       </div>
-      
+
       {/* Controls */}
       <div className="flex items-center gap-2 mt-3">
         {agent.status === 'running' && (
@@ -1149,7 +1155,7 @@ export function AgentHeader({
             Pause
           </button>
         )}
-        
+
         {agent.status === 'paused' && (
           <button
             onClick={onResume}
@@ -1161,7 +1167,7 @@ export function AgentHeader({
             Resume
           </button>
         )}
-        
+
         {(agent.status === 'running' || agent.status === 'paused') && (
           <button
             onClick={onStop}
@@ -1173,7 +1179,7 @@ export function AgentHeader({
             Stop
           </button>
         )}
-        
+
         {agent.status === 'created' && (
           <button
             onClick={onResume}
@@ -1187,7 +1193,7 @@ export function AgentHeader({
         )}
       </div>
     </div>
-  );
+  )
 }
 ```
 
@@ -1196,77 +1202,76 @@ export function AgentHeader({
 ```tsx
 // src/renderer/src/components/agents/AgentStatusBadge.tsx
 
-import React from 'react';
-import { AgentStatus } from '../../types/agent';
-import { cn } from '../../utils/cn';
+import React from 'react'
+import { AgentStatus } from '../../types/agent'
+import { cn } from '../../utils/cn'
 
 interface AgentStatusBadgeProps {
-  status: AgentStatus;
-  size?: 'sm' | 'md';
+  status: AgentStatus
+  size?: 'sm' | 'md'
 }
 
-const statusConfig: Record<AgentStatus, { 
-  label: string; 
-  color: string; 
-  bgColor: string;
-  pulse?: boolean;
-}> = {
-  created: { 
-    label: 'Ready', 
-    color: 'text-zinc-400', 
-    bgColor: 'bg-zinc-500' 
+const statusConfig: Record<
+  AgentStatus,
+  {
+    label: string
+    color: string
+    bgColor: string
+    pulse?: boolean
+  }
+> = {
+  created: {
+    label: 'Ready',
+    color: 'text-zinc-400',
+    bgColor: 'bg-zinc-500'
   },
-  running: { 
-    label: 'Running', 
-    color: 'text-green-400', 
+  running: {
+    label: 'Running',
+    color: 'text-green-400',
     bgColor: 'bg-green-500',
-    pulse: true 
+    pulse: true
   },
-  waiting: { 
-    label: 'Waiting', 
-    color: 'text-amber-400', 
-    bgColor: 'bg-amber-500' 
+  waiting: {
+    label: 'Waiting',
+    color: 'text-amber-400',
+    bgColor: 'bg-amber-500'
   },
-  paused: { 
-    label: 'Paused', 
-    color: 'text-zinc-400', 
-    bgColor: 'bg-zinc-500' 
+  paused: {
+    label: 'Paused',
+    color: 'text-zinc-400',
+    bgColor: 'bg-zinc-500'
   },
-  completed: { 
-    label: 'Completed', 
-    color: 'text-green-400', 
-    bgColor: 'bg-green-500' 
+  completed: {
+    label: 'Completed',
+    color: 'text-green-400',
+    bgColor: 'bg-green-500'
   },
-  failed: { 
-    label: 'Failed', 
-    color: 'text-red-400', 
-    bgColor: 'bg-red-500' 
-  },
-};
+  failed: {
+    label: 'Failed',
+    color: 'text-red-400',
+    bgColor: 'bg-red-500'
+  }
+}
 
 export function AgentStatusBadge({ status, size = 'md' }: AgentStatusBadgeProps) {
-  const config = statusConfig[status];
-  
+  const config = statusConfig[status]
+
   return (
-    <div className={cn(
-      "flex items-center gap-1.5",
-      size === 'sm' ? 'text-xs' : 'text-sm'
-    )}>
+    <div className={cn('flex items-center gap-1.5', size === 'sm' ? 'text-xs' : 'text-sm')}>
       <span className="relative flex h-2 w-2">
         {config.pulse && (
-          <span className={cn(
-            "animate-ping absolute inline-flex h-full w-full rounded-full opacity-75",
-            config.bgColor
-          )} />
+          <span
+            className={cn(
+              'animate-ping absolute inline-flex h-full w-full rounded-full opacity-75',
+              config.bgColor
+            )}
+          />
         )}
-        <span className={cn(
-          "relative inline-flex rounded-full h-2 w-2",
-          config.bgColor
-        )} />
+        <span className={cn('relative inline-flex rounded-full h-2 w-2', config.bgColor)} />
       </span>
       <span className={config.color}>{config.label}</span>
     </div>
-  );
+  )
 }
 ```
 
@@ -1276,11 +1281,11 @@ export function AgentStatusBadge({ status, size = 'md' }: AgentStatusBadgeProps)
 
 ### 9.1 Permission Levels
 
-| Level | Safe Tools | Moderate Tools | Dangerous Tools |
-|-------|------------|----------------|-----------------|
+| Level      | Safe Tools       | Moderate Tools   | Dangerous Tools  |
+| ---------- | ---------------- | ---------------- | ---------------- |
 | Restricted | Require Approval | Require Approval | Require Approval |
-| Standard | Auto-approve | Require Approval | Require Approval |
-| Autonomous | Auto-approve | Auto-approve | Require Approval |
+| Standard   | Auto-approve     | Require Approval | Require Approval |
+| Autonomous | Auto-approve     | Auto-approve     | Require Approval |
 
 ### 9.2 Safety Rails
 
@@ -1321,13 +1326,13 @@ export function AgentStatusBadge({ status, size = 'md' }: AgentStatusBadgeProps)
 
 ## 11. Success Metrics
 
-| Metric | Target | Measurement |
-|--------|--------|-------------|
-| Agent Launch Rate | >20% of power users | Analytics |
-| Task Completion | >80% of started agents | Agent status tracking |
-| User Intervention | <3 approvals per task | Approval count |
-| Performance | <2s response time | Timing metrics |
-| Error Rate | <5% of agents fail | Error tracking |
+| Metric            | Target                 | Measurement           |
+| ----------------- | ---------------------- | --------------------- |
+| Agent Launch Rate | >20% of power users    | Analytics             |
+| Task Completion   | >80% of started agents | Agent status tracking |
+| User Intervention | <3 approvals per task  | Approval count        |
+| Performance       | <2s response time      | Timing metrics        |
+| Error Rate        | <5% of agents fail     | Error tracking        |
 
 ---
 
@@ -1341,11 +1346,12 @@ export function AgentStatusBadge({ status, size = 'md' }: AgentStatusBadgeProps)
 
 ---
 
-*This design document should be reviewed and refined during implementation. Each phase should include verification against these specifications.*
+_This design document should be reviewed and refined during implementation. Each phase should include verification against these specifications._
 
 ---
 
 **Next Steps:**
+
 1. Review and approve design
 2. Begin Phase 1 implementation
 3. Set up tracking for success metrics

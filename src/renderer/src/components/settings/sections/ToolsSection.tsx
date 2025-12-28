@@ -1,15 +1,23 @@
 import { useState, useEffect } from 'react'
-import { 
-  Github, 
-  Terminal, 
-  Settings, 
-  Check, 
+import {
+  Github,
+  Terminal,
+  Settings,
+  Check,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  HardDrive,
+  Search,
+  Brain
 } from 'lucide-react'
 import { cn } from '../../../lib/utils'
 import { ToggleSwitch } from '../shared/ToggleSwitch'
-import { GitHubConfigModal } from '../modals/GitHubConfigModal'
+import {
+  GitHubConfigModal,
+  FilesystemConfigModal,
+  BraveSearchConfigModal,
+  MemoryConfigModal
+} from '../modals'
 
 interface MCPServer {
   id: string
@@ -52,7 +60,8 @@ export function ToolsSection() {
           displayName: 'Desktop Commander',
           description: 'File system access, terminal commands, process management',
           icon: Terminal,
-          enabled: status.config.servers.find(s => s.name === 'desktop-commander')?.enabled ?? false,
+          enabled:
+            status.config.servers.find((s) => s.name === 'desktop-commander')?.enabled ?? false,
           connected: status.connectionStatus['desktop-commander'] ?? false,
           requiresConfig: false,
           configured: true,
@@ -64,11 +73,47 @@ export function ToolsSection() {
           displayName: 'GitHub',
           description: 'Repository management, issues, pull requests, code search',
           icon: Github,
-          enabled: status.config.servers.find(s => s.name === 'github')?.enabled ?? false,
+          enabled: status.config.servers.find((s) => s.name === 'github')?.enabled ?? false,
           connected: githubStatus.isConnected,
           requiresConfig: true,
           configured: githubStatus.isConfigured,
           toolCount: githubStatus.toolCount
+        },
+        {
+          id: 'filesystem',
+          name: 'filesystem',
+          displayName: 'Filesystem',
+          description: 'Read, write, and search files in a configured workspace directory',
+          icon: HardDrive,
+          enabled: status.config.servers.find((s) => s.name === 'filesystem')?.enabled ?? false,
+          connected: status.connectionStatus['filesystem'] ?? false,
+          requiresConfig: true,
+          configured: (await window.api.mcp.filesystem.getAllowedDirectory()) !== null,
+          toolCount: 8
+        },
+        {
+          id: 'brave-search',
+          name: 'brave-search',
+          displayName: 'Brave Search',
+          description: 'Web search powered by Brave Search API for current information',
+          icon: Search,
+          enabled: status.config.servers.find((s) => s.name === 'brave-search')?.enabled ?? false,
+          connected: status.connectionStatus['brave-search'] ?? false,
+          requiresConfig: true,
+          configured: await window.api.credentials.hasKey('brave-search'),
+          toolCount: 2
+        },
+        {
+          id: 'memory',
+          name: 'memory',
+          displayName: 'Memory',
+          description: 'Persistent memory across conversations for context and preferences',
+          icon: Brain,
+          enabled: status.config.servers.find((s) => s.name === 'memory')?.enabled ?? false,
+          connected: status.connectionStatus['memory'] ?? false,
+          requiresConfig: false,
+          configured: true,
+          toolCount: 6
         }
       ]
 
@@ -81,8 +126,8 @@ export function ToolsSection() {
   }
 
   const handleToggleServer = async (serverId: string, enabled: boolean) => {
-    const server = servers.find(s => s.id === serverId)
-    
+    const server = servers.find((s) => s.id === serverId)
+
     // If enabling a server that requires config but isn't configured
     if (enabled && server?.requiresConfig && !server.configured) {
       setConfigModal(serverId)
@@ -91,11 +136,11 @@ export function ToolsSection() {
 
     try {
       const config = await window.api.mcp.getConfig()
-      const updatedServers = config.servers.map(s => 
+      const updatedServers = config.servers.map((s) =>
         s.name === serverId ? { ...s, enabled } : s
       )
       await window.api.mcp.updateConfig({ servers: updatedServers })
-      
+
       if (enabled) {
         setReconnecting(serverId)
         await window.api.mcp.reconnect()
@@ -151,10 +196,7 @@ export function ToolsSection() {
           <h3 className="font-medium text-white">MCP Tools Enabled</h3>
           <p className="text-xs text-text-muted">Master switch for all tool integrations</p>
         </div>
-        <ToggleSwitch
-          checked={mcpEnabled}
-          onChange={handleToggleMCP}
-        />
+        <ToggleSwitch checked={mcpEnabled} onChange={handleToggleMCP} />
       </div>
 
       {/* Server List */}
@@ -167,25 +209,27 @@ export function ToolsSection() {
           <div
             key={server.id}
             className={cn(
-              "p-4 rounded-xl border transition-all",
+              'p-4 rounded-xl border transition-all',
               !mcpEnabled
-                ? "bg-secondary/20 border-secondary/30 opacity-60"
+                ? 'bg-secondary/20 border-secondary/30 opacity-60'
                 : server.enabled && server.connected
-                ? "bg-green-500/5 border-green-500/20"
-                : server.enabled && !server.connected
-                ? "bg-yellow-500/5 border-yellow-500/20"
-                : "bg-secondary/30 border-secondary/50"
+                  ? 'bg-green-500/5 border-green-500/20'
+                  : server.enabled && !server.connected
+                    ? 'bg-yellow-500/5 border-yellow-500/20'
+                    : 'bg-secondary/30 border-secondary/50'
             )}
           >
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-3">
                 {/* Icon */}
-                <div className={cn(
-                  "p-2 rounded-lg",
-                  server.enabled && mcpEnabled
-                    ? "bg-primary/20 text-primary" 
-                    : "bg-secondary text-text-muted"
-                )}>
+                <div
+                  className={cn(
+                    'p-2 rounded-lg',
+                    server.enabled && mcpEnabled
+                      ? 'bg-primary/20 text-primary'
+                      : 'bg-secondary text-text-muted'
+                  )}
+                >
                   <server.icon size={20} />
                 </div>
 
@@ -193,7 +237,7 @@ export function ToolsSection() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h4 className="font-medium text-white">{server.displayName}</h4>
-                    
+
                     {/* Status Badges */}
                     {mcpEnabled && server.enabled && server.connected && (
                       <span className="flex items-center gap-1 text-xs text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full">
@@ -230,12 +274,12 @@ export function ToolsSection() {
                     onClick={() => setConfigModal(server.id)}
                     disabled={!mcpEnabled}
                     className={cn(
-                      "p-2 rounded-lg transition-colors",
+                      'p-2 rounded-lg transition-colors',
                       !mcpEnabled
-                        ? "text-text-muted/50 cursor-not-allowed"
+                        ? 'text-text-muted/50 cursor-not-allowed'
                         : server.configured
-                        ? "text-text-muted hover:text-white hover:bg-secondary"
-                        : "text-orange-400 hover:text-orange-300 hover:bg-orange-400/10"
+                          ? 'text-text-muted hover:text-white hover:bg-secondary'
+                          : 'text-orange-400 hover:text-orange-300 hover:bg-orange-400/10'
                     )}
                     title={server.configured ? 'Edit configuration' : 'Setup required'}
                   >
@@ -264,10 +308,16 @@ export function ToolsSection() {
 
       {/* Modals */}
       {configModal === 'github' && (
-        <GitHubConfigModal
-          onClose={() => setConfigModal(null)}
-          onSave={handleConfigSave}
-        />
+        <GitHubConfigModal onClose={() => setConfigModal(null)} onSave={handleConfigSave} />
+      )}
+      {configModal === 'filesystem' && (
+        <FilesystemConfigModal onClose={() => setConfigModal(null)} onSave={handleConfigSave} />
+      )}
+      {configModal === 'brave-search' && (
+        <BraveSearchConfigModal onClose={() => setConfigModal(null)} onSave={handleConfigSave} />
+      )}
+      {configModal === 'memory' && (
+        <MemoryConfigModal onClose={() => setConfigModal(null)} onSave={handleConfigSave} />
       )}
     </div>
   )

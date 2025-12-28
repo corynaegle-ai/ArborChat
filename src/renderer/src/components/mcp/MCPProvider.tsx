@@ -96,7 +96,7 @@ export function MCPProvider({ children, autoInit = true }: MCPProviderProps) {
       const result = await window.api.mcp.reconnect()
       setTools(result.tools || [])
       setConnected(Object.values(result.connectionStatus || {}).some(Boolean))
-      
+
       // Reload system prompt
       const prompt = await window.api.mcp.getSystemPrompt()
       setSystemPrompt(prompt)

@@ -21,15 +21,19 @@ interface UseMCPToolsResult {
   // State
   toolExecutions: ToolExecution[]
   isProcessingTool: boolean
-  
+
   // Actions
   processAIResponse: (content: string) => Promise<{
     cleanContent: string
     toolCalls: ReturnType<typeof parseToolCalls>
   }>
-  executeTool: (toolName: string, args: Record<string, unknown>, explanation?: string) => Promise<MCPToolResult>
+  executeTool: (
+    toolName: string,
+    args: Record<string, unknown>,
+    explanation?: string
+  ) => Promise<MCPToolResult>
   clearExecutions: () => void
-  
+
   // For context building
   getToolResultsForContext: () => string
 }
@@ -43,7 +47,7 @@ export function useMCPTools(): UseMCPToolsResult {
   // Process AI response for tool calls
   const processAIResponse = useCallback(async (content: string) => {
     const toolCalls = parseToolCalls(content)
-    const cleanContent = hasToolCalls(content) 
+    const cleanContent = hasToolCalls(content)
       ? content.replace(/```tool_use\n[\s\S]*?\n```/g, '').trim()
       : content
 
@@ -51,68 +55,76 @@ export function useMCPTools(): UseMCPToolsResult {
   }, [])
 
   // Execute a tool and track its status
-  const executeTool = useCallback(async (
-    toolName: string,
-    args: Record<string, unknown>,
-    explanation?: string
-  ): Promise<MCPToolResult> => {
-    if (!connected) {
-      return {
-        id: '',
-        success: false,
-        error: 'MCP not connected'
+  const executeTool = useCallback(
+    async (
+      toolName: string,
+      args: Record<string, unknown>,
+      explanation?: string
+    ): Promise<MCPToolResult> => {
+      if (!connected) {
+        return {
+          id: '',
+          success: false,
+          error: 'MCP not connected'
+        }
       }
-    }
 
-    const executionId = `exec-${++executionIdRef.current}`
-    
-    // Add pending execution
-    setToolExecutions(prev => [...prev, {
-      id: executionId,
-      toolName,
-      args,
-      explanation: explanation || '',
-      status: 'executing'
-    }])
+      const executionId = `exec-${++executionIdRef.current}`
 
-    setIsProcessingTool(true)
+      // Add pending execution
+      setToolExecutions((prev) => [
+        ...prev,
+        {
+          id: executionId,
+          toolName,
+          args,
+          explanation: explanation || '',
+          status: 'executing'
+        }
+      ])
 
-    try {
-      const result = await requestTool(toolName, args, explanation)
-      
-      // Update execution status
-      setToolExecutions(prev => prev.map(exec => 
-        exec.id === executionId 
-          ? {
-              ...exec,
-              status: result.success ? 'completed' : 'error',
-              result: result.result,
-              error: result.error,
-              duration: result.duration,
-              autoApproved: result.autoApproved
-            }
-          : exec
-      ))
+      setIsProcessingTool(true)
 
-      return result
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error)
-      
-      setToolExecutions(prev => prev.map(exec => 
-        exec.id === executionId 
-          ? { ...exec, status: 'error', error: errorMsg }
-          : exec
-      ))
+      try {
+        const result = await requestTool(toolName, args, explanation)
 
-      return {
-        id: executionId,
-        success: false,
-        error: errorMsg
+        // Update execution status
+        setToolExecutions((prev) =>
+          prev.map((exec) =>
+            exec.id === executionId
+              ? {
+                  ...exec,
+                  status: result.success ? 'completed' : 'error',
+                  result: result.result,
+                  error: result.error,
+                  duration: result.duration,
+                  autoApproved: result.autoApproved
+                }
+              : exec
+          )
+        )
+
+        return result
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error)
+
+        setToolExecutions((prev) =>
+          prev.map((exec) =>
+            exec.id === executionId ? { ...exec, status: 'error', error: errorMsg } : exec
+          )
+        )
+
+        return {
+          id: executionId,
+          success: false,
+          error: errorMsg
+        }
+      } finally {
+        setIsProcessingTool(false)
       }
-    } finally {
-      setIsProcessingTool(false)
-    }
-  }, [connected, requestTool])
+    },
+    [connected, requestTool]
+  )
 
   // Clear all executions
   const clearExecutions = useCallback(() => {
@@ -122,8 +134,8 @@ export function useMCPTools(): UseMCPToolsResult {
   // Get tool results formatted for AI context
   const getToolResultsForContext = useCallback(() => {
     return toolExecutions
-      .filter(exec => exec.status === 'completed' || exec.status === 'error')
-      .map(exec => formatToolResult(exec.toolName, exec.result, exec.error))
+      .filter((exec) => exec.status === 'completed' || exec.status === 'error')
+      .map((exec) => formatToolResult(exec.toolName, exec.result, exec.error))
       .join('\n\n')
   }, [toolExecutions])
 

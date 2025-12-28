@@ -166,7 +166,10 @@ interface MCPAPI {
     explanation?: string
   ) => Promise<MCPToolResult>
   approve: (id: string, modifiedArgs?: Record<string, unknown>) => Promise<MCPToolResult>
-  alwaysApprove: (id: string, modifiedArgs?: Record<string, unknown>) => Promise<MCPToolResult & { alwaysApproved?: boolean }>
+  alwaysApprove: (
+    id: string,
+    modifiedArgs?: Record<string, unknown>
+  ) => Promise<MCPToolResult & { alwaysApproved?: boolean }>
   reject: (id: string) => Promise<{ rejected: boolean }>
   getPending: () => Promise<MCPPendingCall[]>
   cancelPending: (id: string) => Promise<{ cancelled: boolean }>
@@ -181,6 +184,21 @@ interface MCPAPI {
   removeAllListeners: () => void
   // GitHub-specific API
   github: GitHubAPI
+  // Filesystem-specific API
+  filesystem: {
+    selectDirectory: () => Promise<string | null>
+    getAllowedDirectory: () => Promise<string | null>
+    setAllowedDirectory: (directory: string) => Promise<void>
+  }
+  // Brave Search-specific API
+  braveSearch: {
+    validateKey: (apiKey: string) => Promise<{ valid: boolean; error?: string }>
+  }
+  // Memory-specific API
+  memory: {
+    clearAll: () => Promise<{ success: boolean; message?: string }>
+    getStats: () => Promise<{ count: number; size: number; message?: string }>
+  }
 }
 
 declare global {
@@ -189,7 +207,7 @@ declare global {
     api: {
       // Dialog APIs
       selectDirectory: () => Promise<string | null>
-      
+
       getConversations: () => Promise<import('../renderer/src/types').Conversation[]>
       createConversation: (title: string) => Promise<import('../renderer/src/types').Conversation>
       deleteConversation: (id: string) => Promise<void>

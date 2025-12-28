@@ -5,10 +5,12 @@
 **Project:** ArborChat - A threaded AI chat desktop application  
 **Location:** `/Users/cory.naegle/ArborChat`  
 **Repository:**
+
 - Fork: `https://github.com/corynaegle-ai/ArborChat`
 - Upstream: `https://github.com/jordannaegle/ArborChat`
 
 **Tech Stack:**
+
 - Electron (main + renderer processes)
 - TypeScript
 - React (renderer)
@@ -24,6 +26,7 @@
 Implement the GitHub MCP Server integration into ArborChat following the design document at `/Users/cory.naegle/ArborChat/docs/GITHUB_MCP_DESIGN.md`.
 
 This will enable users to interact with GitHub directly through the AI chat interface, performing operations like:
+
 - Searching repositories and code
 - Creating and managing issues
 - Creating and reviewing pull requests
@@ -66,6 +69,7 @@ src/main/mcp/
 **File:** `src/main/mcp/servers/github.ts`
 
 Create this file with:
+
 - `GITHUB_MCP_CONFIG` - MCPServerConfig object
 - `GITHUB_TOOL_CATEGORIES` - Tool groupings for UI
 - `GITHUB_TOOL_RISK_LEVELS` - Risk classification for each tool
@@ -127,6 +131,7 @@ Include a `validateGitHubToken()` helper that tests the token against GitHub's A
 **File:** `src/main/mcp/types.ts`
 
 Add:
+
 ```typescript
 export interface GitHubStatus {
   isConfigured: boolean
@@ -146,6 +151,7 @@ export interface GitHubConfigureResult {
 **File:** `src/main/mcp/index.ts`
 
 Add exports for:
+
 - All exports from `./servers/github`
 - All exports from `./credentials`
 
@@ -179,6 +185,7 @@ Add type definitions for the new GitHub API methods.
 **File:** `src/renderer/src/components/settings/GitHubSettings.tsx`
 
 Create a settings panel component that:
+
 - Shows connection status (connected/disconnected)
 - Provides a secure input field for the PAT
 - Has Connect/Disconnect buttons
@@ -191,6 +198,7 @@ Create a settings panel component that:
 **File:** `src/renderer/src/components/ToolApprovalCard.tsx` (if exists)
 
 Add GitHub-specific icons for tools:
+
 - Use appropriate Lucide icons for GitHub operations
 - Add GitHub branding/styling for GitHub tools
 
@@ -265,7 +273,7 @@ ipcMain.handle('mcp:github:configure', async (_, { token }: { token: string }) =
 
     // 3. Update config
     const config = loadMCPConfig()
-    const githubServer = config.servers.find(s => s.name === 'github')
+    const githubServer = config.servers.find((s) => s.name === 'github')
     if (githubServer) {
       githubServer.enabled = true
     }
@@ -315,6 +323,7 @@ ipcMain.handle('mcp:github:configure', async (_, { token }: { token: string }) =
 ### Automated Tests (Optional)
 
 Create tests in `src/main/mcp/__tests__/`:
+
 - `github.test.ts` - Test configuration and risk levels
 - `credentials.test.ts` - Test secure storage (mock safeStorage)
 
@@ -333,6 +342,7 @@ Create tests in `src/main/mcp/__tests__/`:
 ### Error Handling
 
 Handle these GitHub-specific errors:
+
 - 401: Invalid/expired token
 - 403: Rate limit exceeded or insufficient permissions
 - 404: Resource not found
@@ -416,5 +426,5 @@ npm run typecheck
 
 ---
 
-*Prompt Version: 1.0*
-*Created: December 2024*
+_Prompt Version: 1.0_
+_Created: December 2024_

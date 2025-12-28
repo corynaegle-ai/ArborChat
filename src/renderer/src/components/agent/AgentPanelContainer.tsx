@@ -24,7 +24,7 @@ export function AgentPanelContainer({
 }: AgentPanelContainerProps) {
   const { getAgent } = useAgentContext()
   const agent = getAgent(agentId)
-  
+
   const {
     state: runnerState,
     start,
@@ -62,19 +62,22 @@ export function AgentPanelContainer({
   }, [agent?.status, agent?.pendingToolCall, resume, start])
 
   // Handle tool approval
-  const handleToolApprove = useCallback(async (
-    id: string, 
-    modifiedArgs?: Record<string, unknown>
-  ) => {
-    console.log('[AgentPanelContainer] Tool approved:', id)
-    await approveTool(modifiedArgs)
-  }, [approveTool])
+  const handleToolApprove = useCallback(
+    async (id: string, modifiedArgs?: Record<string, unknown>) => {
+      console.log('[AgentPanelContainer] Tool approved:', id)
+      await approveTool(modifiedArgs)
+    },
+    [approveTool]
+  )
 
   // Handle tool rejection
-  const handleToolReject = useCallback((id: string) => {
-    console.log('[AgentPanelContainer] Tool rejected:', id)
-    rejectTool()
-  }, [rejectTool])
+  const handleToolReject = useCallback(
+    (id: string) => {
+      console.log('[AgentPanelContainer] Tool rejected:', id)
+      rejectTool()
+    },
+    [rejectTool]
+  )
 
   // Handle close with cleanup
   const handleClose = useCallback(() => {
@@ -85,9 +88,12 @@ export function AgentPanelContainer({
   }, [runnerState.isRunning, stop, onClose])
 
   // Handle send message
-  const handleSendMessage = useCallback(async (content: string) => {
-    await sendMessage(content)
-  }, [sendMessage])
+  const handleSendMessage = useCallback(
+    async (content: string) => {
+      await sendMessage(content)
+    },
+    [sendMessage]
+  )
 
   if (!agent) {
     return null

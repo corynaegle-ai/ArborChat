@@ -6,6 +6,9 @@ import * as path from 'path'
 import { MCPConfig } from './types'
 import { DESKTOP_COMMANDER_CONFIG } from './servers/desktop-commander'
 import { GITHUB_MCP_CONFIG } from './servers/github'
+import { FILESYSTEM_MCP_CONFIG } from './servers/filesystem'
+import { BRAVE_SEARCH_MCP_CONFIG } from './servers/brave-search'
+import { MEMORY_MCP_CONFIG } from './servers/memory'
 
 const CONFIG_FILE = 'mcp-config.json'
 
@@ -15,16 +18,22 @@ const CONFIG_FILE = 'mcp-config.json'
 export const DEFAULT_MCP_CONFIG: MCPConfig = {
   enabled: true,
   autoApprove: {
-    safe: true,      // Auto-approve read-only operations
-    moderate: false  // Require approval for write operations
+    safe: true, // Auto-approve read-only operations
+    moderate: false // Require approval for write operations
   },
-  alwaysApproveTools: [],  // Tools that are always auto-approved regardless of risk level
+  alwaysApproveTools: [], // Tools that are always auto-approved regardless of risk level
   allowedDirectories: [
     // Will be populated with user's home directory at runtime
   ],
   blockedTools: [],
   timeout: 300000, // 5 minutes
-  servers: [DESKTOP_COMMANDER_CONFIG, GITHUB_MCP_CONFIG]
+  servers: [
+    DESKTOP_COMMANDER_CONFIG,
+    GITHUB_MCP_CONFIG,
+    FILESYSTEM_MCP_CONFIG,
+    BRAVE_SEARCH_MCP_CONFIG,
+    MEMORY_MCP_CONFIG
+  ]
 }
 
 /**
@@ -148,7 +157,7 @@ export function addAlwaysApproveTool(toolName: string): MCPConfig {
  */
 export function removeAlwaysApproveTool(toolName: string): MCPConfig {
   const config = loadMCPConfig()
-  config.alwaysApproveTools = config.alwaysApproveTools.filter(t => t !== toolName)
+  config.alwaysApproveTools = config.alwaysApproveTools.filter((t) => t !== toolName)
   saveMCPConfig(config)
   return config
 }

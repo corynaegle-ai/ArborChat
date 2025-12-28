@@ -53,18 +53,8 @@ export const GITHUB_TOOL_CATEGORIES: Record<string, string[]> = {
     'fork_repository',
     'create_branch'
   ],
-  files: [
-    'create_or_update_file',
-    'push_files',
-    'get_file_contents'
-  ],
-  issues: [
-    'create_issue',
-    'list_issues',
-    'update_issue',
-    'add_issue_comment',
-    'search_issues'
-  ],
+  files: ['create_or_update_file', 'push_files', 'get_file_contents'],
+  issues: ['create_issue', 'list_issues', 'update_issue', 'add_issue_comment', 'search_issues'],
   pullRequests: [
     'create_pull_request',
     'list_pull_requests',
@@ -74,16 +64,8 @@ export const GITHUB_TOOL_CATEGORIES: Record<string, string[]> = {
     'get_pull_request_reviews',
     'update_pull_request_branch'
   ],
-  search: [
-    'search_code',
-    'search_issues',
-    'search_repositories',
-    'search_users'
-  ],
-  users: [
-    'get_me',
-    'search_users'
-  ]
+  search: ['search_code', 'search_issues', 'search_repositories', 'search_users'],
+  users: ['get_me', 'search_users']
 }
 
 /**
@@ -163,16 +145,13 @@ export function getGitHubCategoryDescription(category: string): string {
  * Required PAT scopes for full GitHub MCP functionality
  */
 export const REQUIRED_GITHUB_SCOPES = [
-  'repo',           // Full control of private repositories
-  'read:org',       // Read organization data
-  'read:user',      // Read user profile data
-  'workflow'        // Update GitHub Actions workflows (optional)
+  'repo', // Full control of private repositories
+  'read:org', // Read organization data
+  'read:user', // Read user profile data
+  'workflow' // Update GitHub Actions workflows (optional)
 ]
 
 /**
  * Minimum PAT scopes for read-only access
  */
-export const READONLY_GITHUB_SCOPES = [
-  'public_repo',
-  'read:user'
-]
+export const READONLY_GITHUB_SCOPES = ['public_repo', 'read:user']

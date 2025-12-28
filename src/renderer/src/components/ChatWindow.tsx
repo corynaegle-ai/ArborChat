@@ -59,7 +59,11 @@ interface ChatWindowProps {
   pendingToolCall?: PendingToolCall | null
   toolExecutions?: ToolExecution[]
   onToolApprove?: (id: string, modifiedArgs?: Record<string, unknown>) => void
-  onToolAlwaysApprove?: (id: string, toolName: string, modifiedArgs?: Record<string, unknown>) => void
+  onToolAlwaysApprove?: (
+    id: string,
+    toolName: string,
+    modifiedArgs?: Record<string, unknown>
+  ) => void
   onToolReject?: (id: string) => void
   // Persona Props (Phase 4)
   activePersonaId?: string | null
@@ -170,7 +174,7 @@ function MessageBubble({
               <MessageCircle size={14} />
               <span>Thread</span>
             </button>
-            
+
             {/* Agent Launch Button */}
             {onAgentLaunch && (
               <button
@@ -213,24 +217,24 @@ function EmptyState() {
  * Active Persona Indicator
  * Shows when a persona is active above the input
  */
-function ActivePersonaIndicator({ 
-  personaName, 
-  onDeactivate 
-}: { 
+function ActivePersonaIndicator({
+  personaName,
+  onDeactivate
+}: {
   personaName: string
-  onDeactivate: () => void 
+  onDeactivate: () => void
 }) {
   return (
-    <div className={cn(
-      "absolute -top-9 left-1/2 -translate-x-1/2",
-      "flex items-center gap-2 px-3 py-1.5 rounded-full",
-      "bg-primary/10 border border-primary/20",
-      "animate-in fade-in slide-in-from-bottom-2 duration-200"
-    )}>
+    <div
+      className={cn(
+        'absolute -top-9 left-1/2 -translate-x-1/2',
+        'flex items-center gap-2 px-3 py-1.5 rounded-full',
+        'bg-primary/10 border border-primary/20',
+        'animate-in fade-in slide-in-from-bottom-2 duration-200'
+      )}
+    >
       <Sparkles size={12} className="text-primary" />
-      <span className="text-xs text-primary font-medium">
-        {personaName}
-      </span>
+      <span className="text-xs text-primary font-medium">{personaName}</span>
       <button
         onClick={onDeactivate}
         className="p-0.5 rounded-full hover:bg-primary/20 transition-colors"
@@ -465,16 +469,19 @@ export function ChatWindow({
             )}
 
             {/* Tool Results - show completed tool executions */}
-            {toolExecutions && toolExecutions.filter(e => e.status === 'completed' || e.status === 'error').map((exec) => (
-              <ToolResultCard
-                key={exec.id}
-                toolName={exec.toolName}
-                result={exec.result}
-                error={exec.error}
-                duration={exec.duration}
-                autoApproved={exec.autoApproved}
-              />
-            ))}
+            {toolExecutions &&
+              toolExecutions
+                .filter((e) => e.status === 'completed' || e.status === 'error')
+                .map((exec) => (
+                  <ToolResultCard
+                    key={exec.id}
+                    toolName={exec.toolName}
+                    result={exec.result}
+                    error={exec.error}
+                    duration={exec.duration}
+                    autoApproved={exec.autoApproved}
+                  />
+                ))}
           </div>
         ) : (
           <EmptyState />
@@ -497,7 +504,7 @@ export function ChatWindow({
             state={slashState}
             onSelect={(index) => {
               setSelectedIndex(index)
-              executeSelected().then(handled => {
+              executeSelected().then((handled) => {
                 if (handled) {
                   setInput('')
                   resetSlash()
@@ -509,7 +516,7 @@ export function ChatWindow({
 
           {/* Active Persona Indicator */}
           {activePersonaId && activePersonaName && onActivatePersona && (
-            <ActivePersonaIndicator 
+            <ActivePersonaIndicator
               personaName={activePersonaName}
               onDeactivate={() => onActivatePersona(null)}
             />
@@ -527,7 +534,9 @@ export function ChatWindow({
               value={input}
               onChange={(e) => handleInputChange(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={pending ? 'Waiting for response...' : 'Send a message... (Type / for commands)'}
+              placeholder={
+                pending ? 'Waiting for response...' : 'Send a message... (Type / for commands)'
+              }
               disabled={pending}
               rows={1}
               className={cn(

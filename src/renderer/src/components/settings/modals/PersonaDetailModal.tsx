@@ -1,13 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import {
-  X,
-  Edit2,
-  Save,
-  Calendar,
-  Tag,
-  AlertCircle,
-  Loader2
-} from 'lucide-react'
+import { X, Edit2, Save, Calendar, Tag, AlertCircle, Loader2 } from 'lucide-react'
 import { cn } from '../../../lib/utils'
 import { Persona, UpdatePersonaInput } from '../../../types/persona'
 
@@ -86,7 +78,7 @@ export function PersonaDetailModal({
 
     setSaving(true)
     setError(null)
-    
+
     try {
       await onSave({
         name,
@@ -113,37 +105,40 @@ export function PersonaDetailModal({
   }
 
   // Character count helper
-  const CharacterCount = ({ current, max, warning = 0.8 }: { 
+  const CharacterCount = ({
+    current,
+    max,
+    warning = 0.8
+  }: {
     current: number
-    max: number 
+    max: number
     warning?: number
   }) => {
     const percentage = current / max
     const isWarning = percentage >= warning
     const isError = percentage >= 1
-    
+
     return (
-      <span className={cn(
-        "text-xs",
-        isError ? "text-red-400" : isWarning ? "text-yellow-400" : "text-text-muted/60"
-      )}>
+      <span
+        className={cn(
+          'text-xs',
+          isError ? 'text-red-400' : isWarning ? 'text-yellow-400' : 'text-text-muted/60'
+        )}
+      >
         {current.toLocaleString()}/{max.toLocaleString()}
       </span>
     )
   }
 
   return (
-    <div 
-      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
-      <div 
+      <div
         className={cn(
-          "relative w-full max-w-3xl max-h-[90vh] overflow-y-auto",
-          "bg-background rounded-xl border border-secondary",
-          "shadow-2xl shadow-black/50"
+          'relative w-full max-w-3xl max-h-[90vh] overflow-y-auto',
+          'bg-background rounded-xl border border-secondary',
+          'shadow-2xl shadow-black/50'
         )}
         onClick={(e) => e.stopPropagation()}
       >
@@ -170,11 +165,11 @@ export function PersonaDetailModal({
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className={cn(
-                      "text-lg font-bold text-white bg-transparent w-full",
-                      "border-b focus:outline-none",
-                      validationErrors.name 
-                        ? "border-red-400 focus:border-red-400" 
-                        : "border-primary/50 focus:border-primary"
+                      'text-lg font-bold text-white bg-transparent w-full',
+                      'border-b focus:outline-none',
+                      validationErrors.name
+                        ? 'border-red-400 focus:border-red-400'
+                        : 'border-primary/50 focus:border-primary'
                     )}
                   />
                   {validationErrors.name && (
@@ -238,11 +233,8 @@ export function PersonaDetailModal({
           {persona.tags.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
               <Tag size={14} className="text-text-muted" />
-              {persona.tags.map(tag => (
-                <span
-                  key={tag}
-                  className="text-xs text-text-muted bg-secondary px-2 py-1 rounded"
-                >
+              {persona.tags.map((tag) => (
+                <span key={tag} className="text-xs text-text-muted bg-secondary px-2 py-1 rounded">
                   {tag}
                 </span>
               ))}
@@ -252,9 +244,7 @@ export function PersonaDetailModal({
           {/* Description */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-sm font-medium text-text-normal">
-                Description
-              </label>
+              <label className="block text-sm font-medium text-text-normal">Description</label>
               {isEditing && (
                 <CharacterCount current={description.length} max={MAX_DESCRIPTION_LENGTH} />
               )}
@@ -267,13 +257,11 @@ export function PersonaDetailModal({
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Brief description of this persona"
                   className={cn(
-                    "w-full px-3 py-2 rounded-lg",
-                    "bg-secondary border",
-                    validationErrors.description
-                      ? "border-red-400"
-                      : "border-secondary/50",
-                    "text-white placeholder-text-muted/50",
-                    "focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    'w-full px-3 py-2 rounded-lg',
+                    'bg-secondary border',
+                    validationErrors.description ? 'border-red-400' : 'border-secondary/50',
+                    'text-white placeholder-text-muted/50',
+                    'focus:outline-none focus:ring-2 focus:ring-primary/50'
                   )}
                 />
                 {validationErrors.description && (
@@ -292,11 +280,7 @@ export function PersonaDetailModal({
                 Persona Instructions
               </label>
               {isEditing && (
-                <CharacterCount 
-                  current={content.length} 
-                  max={MAX_CONTENT_LENGTH} 
-                  warning={0.9}
-                />
+                <CharacterCount current={content.length} max={MAX_CONTENT_LENGTH} warning={0.9} />
               )}
             </div>
             {isEditing ? (
@@ -306,13 +290,11 @@ export function PersonaDetailModal({
                   onChange={(e) => setContent(e.target.value)}
                   rows={16}
                   className={cn(
-                    "w-full px-3 py-2 rounded-lg resize-none font-mono text-sm",
-                    "bg-secondary border",
-                    validationErrors.content
-                      ? "border-red-400"
-                      : "border-secondary/50",
-                    "text-white placeholder-text-muted/50",
-                    "focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    'w-full px-3 py-2 rounded-lg resize-none font-mono text-sm',
+                    'bg-secondary border',
+                    validationErrors.content ? 'border-red-400' : 'border-secondary/50',
+                    'text-white placeholder-text-muted/50',
+                    'focus:outline-none focus:ring-2 focus:ring-primary/50'
                   )}
                 />
                 {validationErrors.content && (
@@ -320,11 +302,13 @@ export function PersonaDetailModal({
                 )}
               </div>
             ) : (
-              <div className={cn(
-                "max-h-96 overflow-y-auto p-4 rounded-lg",
-                "bg-secondary/50 border border-secondary/30",
-                "font-mono text-sm text-text-normal whitespace-pre-wrap"
-              )}>
+              <div
+                className={cn(
+                  'max-h-96 overflow-y-auto p-4 rounded-lg',
+                  'bg-secondary/50 border border-secondary/30',
+                  'font-mono text-sm text-text-normal whitespace-pre-wrap'
+                )}
+              >
                 {persona.content}
               </div>
             )}
@@ -344,10 +328,10 @@ export function PersonaDetailModal({
               onClick={handleSave}
               disabled={saving}
               className={cn(
-                "flex items-center gap-2 px-5 py-2 rounded-lg",
-                "bg-primary hover:bg-primary/90 text-white font-medium",
-                "disabled:opacity-50 disabled:cursor-not-allowed",
-                "transition-colors"
+                'flex items-center gap-2 px-5 py-2 rounded-lg',
+                'bg-primary hover:bg-primary/90 text-white font-medium',
+                'disabled:opacity-50 disabled:cursor-not-allowed',
+                'transition-colors'
               )}
             >
               {saving ? (

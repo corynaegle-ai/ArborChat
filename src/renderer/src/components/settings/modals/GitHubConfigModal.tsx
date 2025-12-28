@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
-import { 
-  X, 
-  Github, 
-  Key, 
-  ExternalLink, 
-  Check, 
+import {
+  X,
+  Github,
+  Key,
+  ExternalLink,
+  Check,
   AlertCircle,
   Trash2,
   RefreshCw,
@@ -71,7 +71,7 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
 
     try {
       const result = await window.api.mcp.github.configure(token.trim())
-      
+
       if (result.success) {
         setSuccess(true)
         setCurrentAccount({
@@ -79,7 +79,7 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
         })
         setToken('')
         setShowTokenInput(false)
-        
+
         setTimeout(() => {
           onSave()
         }, 1000)
@@ -105,20 +105,17 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
   }
 
   return (
-    <div 
-      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={onClose}>
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" />
 
       {/* Modal */}
-      <div 
+      <div
         className={cn(
-          "relative w-full max-w-lg",
-          "bg-background rounded-xl border border-secondary",
-          "shadow-2xl shadow-black/50",
-          "animate-scale-in"
+          'relative w-full max-w-lg',
+          'bg-background rounded-xl border border-secondary',
+          'shadow-2xl shadow-black/50',
+          'animate-scale-in'
         )}
         onClick={(e) => e.stopPropagation()}
       >
@@ -156,9 +153,7 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
               {success && (
                 <div className="flex items-center gap-3 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
                   <Check className="text-green-400" size={18} />
-                  <span className="text-sm text-green-400">
-                    GitHub connected successfully!
-                  </span>
+                  <span className="text-sm text-green-400">GitHub connected successfully!</span>
                 </div>
               )}
 
@@ -180,26 +175,22 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-white">
-                            @{currentAccount.username}
-                          </span>
+                          <span className="font-medium text-white">@{currentAccount.username}</span>
                           <span className="flex items-center gap-1 text-xs text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full">
                             <Check size={10} />
                             Connected
                           </span>
                         </div>
-                        <p className="text-xs text-text-muted">
-                          Personal Access Token configured
-                        </p>
+                        <p className="text-xs text-text-muted">Personal Access Token configured</p>
                       </div>
                     </div>
 
                     <button
                       onClick={handleDisconnect}
                       className={cn(
-                        "flex items-center gap-2 px-3 py-1.5 rounded-lg",
-                        "text-red-400 hover:text-red-300 hover:bg-red-400/10",
-                        "text-sm transition-colors"
+                        'flex items-center gap-2 px-3 py-1.5 rounded-lg',
+                        'text-red-400 hover:text-red-300 hover:bg-red-400/10',
+                        'text-sm transition-colors'
                       )}
                     >
                       <Trash2 size={14} />
@@ -221,17 +212,28 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
 
                   {/* Instructions */}
                   <div className="p-3 bg-tertiary/50 rounded-lg border border-tertiary text-sm space-y-2">
-                    <p className="text-text-muted">Create a Personal Access Token with these scopes:</p>
+                    <p className="text-text-muted">
+                      Create a Personal Access Token with these scopes:
+                    </p>
                     <ul className="list-disc list-inside text-text-muted space-y-1 ml-2">
-                      <li><code className="text-primary/80">repo</code> - Full repository access</li>
-                      <li><code className="text-primary/80">read:org</code> - Read organization data</li>
-                      <li><code className="text-primary/80">read:user</code> - Read user profile</li>
+                      <li>
+                        <code className="text-primary/80">repo</code> - Full repository access
+                      </li>
+                      <li>
+                        <code className="text-primary/80">read:org</code> - Read organization data
+                      </li>
+                      <li>
+                        <code className="text-primary/80">read:user</code> - Read user profile
+                      </li>
                     </ul>
                     <a
                       href="#"
                       onClick={(e) => {
                         e.preventDefault()
-                        window.open('https://github.com/settings/tokens/new?scopes=repo,read:org,read:user&description=ArborChat', '_blank')
+                        window.open(
+                          'https://github.com/settings/tokens/new?scopes=repo,read:org,read:user&description=ArborChat',
+                          '_blank'
+                        )
                       }}
                       className="flex items-center gap-1 text-primary hover:underline mt-2"
                     >
@@ -251,10 +253,10 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
                       onChange={(e) => setToken(e.target.value)}
                       placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
                       className={cn(
-                        "w-full px-3 py-2.5 rounded-lg",
-                        "bg-tertiary border border-gray-700",
-                        "text-white placeholder-text-muted/50 font-mono text-sm",
-                        "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                        'w-full px-3 py-2.5 rounded-lg',
+                        'bg-tertiary border border-gray-700',
+                        'text-white placeholder-text-muted/50 font-mono text-sm',
+                        'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent'
                       )}
                       autoFocus
                       onKeyDown={(e) => {
@@ -272,10 +274,10 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
                 <button
                   onClick={() => setShowTokenInput(true)}
                   className={cn(
-                    "w-full flex items-center justify-center gap-2 p-3 rounded-lg",
-                    "border border-dashed border-secondary hover:border-primary/50",
-                    "text-text-muted hover:text-white",
-                    "transition-colors"
+                    'w-full flex items-center justify-center gap-2 p-3 rounded-lg',
+                    'border border-dashed border-secondary hover:border-primary/50',
+                    'text-text-muted hover:text-white',
+                    'transition-colors'
                   )}
                 >
                   <RefreshCw size={16} />
@@ -299,10 +301,10 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
               onClick={handleSaveToken}
               disabled={!token.trim() || loading}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-lg font-medium",
-                "bg-primary hover:bg-primary/90 text-white",
-                "disabled:opacity-50 disabled:cursor-not-allowed",
-                "transition-colors"
+                'flex items-center gap-2 px-4 py-2 rounded-lg font-medium',
+                'bg-primary hover:bg-primary/90 text-white',
+                'disabled:opacity-50 disabled:cursor-not-allowed',
+                'transition-colors'
               )}
             >
               {loading ? (

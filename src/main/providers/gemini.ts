@@ -192,14 +192,14 @@ export class GeminiProvider implements AIProvider {
         }
         console.log('[Gemini] Stream complete. Total chunks:', chunkCount)
         console.log('[Gemini] Full response preview:', fullResponse.substring(0, 500))
-        
+
         // Check for tool_use pattern
         if (fullResponse.includes('```tool_use')) {
           console.log('[Gemini] ✅ Tool use block detected in response!')
         } else {
           console.log('[Gemini] ❌ No tool_use block in response')
         }
-        
+
         window.webContents.send('ai:done')
       } catch (streamErr) {
         // If streaming is not supported, fall back to simple generateContent

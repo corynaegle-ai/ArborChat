@@ -39,8 +39,8 @@ const MENU_ITEMS = [
   }
 ]
 
-export function SettingsPanel({ 
-  isOpen, 
+export function SettingsPanel({
+  isOpen,
   onClose,
   selectedModel,
   onModelChange,
@@ -57,7 +57,7 @@ export function SettingsPanel({
         handleClose()
       }
     }
-    
+
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isOpen])
@@ -73,37 +73,34 @@ export function SettingsPanel({
   if (!isOpen && !isClosing) return null
 
   return (
-    <div 
-      className="fixed inset-0 z-50 flex"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Settings"
-    >
+    <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true" aria-label="Settings">
       {/* Backdrop */}
-      <div 
+      <div
         className={cn(
-          "absolute inset-0 bg-black/50 backdrop-blur-sm",
-          isClosing ? "animate-fade-out" : "animate-fade-in"
+          'absolute inset-0 bg-black/50 backdrop-blur-sm',
+          isClosing ? 'animate-fade-out' : 'animate-fade-in'
         )}
         onClick={handleClose}
       />
 
       {/* Panel */}
-      <div className={cn(
-        "relative ml-auto h-full w-full max-w-3xl",
-        "bg-background border-l border-secondary",
-        "shadow-2xl shadow-black/50",
-        isClosing ? "animate-slide-out-right" : "animate-slide-in-right"
-      )}>
+      <div
+        className={cn(
+          'relative ml-auto h-full w-full max-w-3xl',
+          'bg-background border-l border-secondary',
+          'shadow-2xl shadow-black/50',
+          isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'
+        )}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-secondary">
           <h1 className="text-xl font-bold text-white">Settings</h1>
           <button
             onClick={handleClose}
             className={cn(
-              "p-2 rounded-lg",
-              "text-text-muted hover:text-white hover:bg-secondary",
-              "transition-colors"
+              'p-2 rounded-lg',
+              'text-text-muted hover:text-white hover:bg-secondary',
+              'transition-colors'
             )}
             aria-label="Close settings"
           >
@@ -121,11 +118,11 @@ export function SettingsPanel({
                   <button
                     onClick={() => setActiveSection(item.id)}
                     className={cn(
-                      "w-full flex items-center gap-3 p-3 rounded-lg",
-                      "text-left transition-all duration-150",
+                      'w-full flex items-center gap-3 p-3 rounded-lg',
+                      'text-left transition-all duration-150',
                       activeSection === item.id
-                        ? "bg-secondary text-white"
-                        : "text-text-muted hover:text-text-normal hover:bg-secondary/40"
+                        ? 'bg-secondary text-white'
+                        : 'text-text-muted hover:text-text-normal hover:bg-secondary/40'
                     )}
                   >
                     <item.icon size={18} />
@@ -142,14 +139,11 @@ export function SettingsPanel({
           {/* Content */}
           <main className="flex-1 overflow-y-auto p-6">
             {activeSection === 'api-keys' && (
-              <APIKeysSection 
-                selectedModel={selectedModel}
-                onModelChange={onModelChange}
-              />
+              <APIKeysSection selectedModel={selectedModel} onModelChange={onModelChange} />
             )}
             {activeSection === 'tools' && <ToolsSection />}
             {activeSection === 'personas' && (
-              <PersonasSection 
+              <PersonasSection
                 activePersonaId={activePersonaId}
                 onActivatePersona={onActivatePersona}
               />

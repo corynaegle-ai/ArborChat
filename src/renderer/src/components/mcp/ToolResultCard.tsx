@@ -23,9 +23,7 @@ export function ToolResultCard({
   const [copied, setCopied] = useState(false)
 
   const isSuccess = !error
-  const displayResult = typeof result === 'string'
-    ? result
-    : JSON.stringify(result, null, 2)
+  const displayResult = typeof result === 'string' ? result : JSON.stringify(result, null, 2)
 
   const isLongContent = (displayResult?.length || 0) > 500 || (error?.length || 0) > 500
 
@@ -40,9 +38,7 @@ export function ToolResultCard({
     <div
       className={cn(
         'rounded-lg border p-3 my-2 transition-all',
-        isSuccess
-          ? 'border-green-500/30 bg-green-500/5'
-          : 'border-red-500/30 bg-red-500/5'
+        isSuccess ? 'border-green-500/30 bg-green-500/5' : 'border-red-500/30 bg-red-500/5'
       )}
     >
       {/* Header */}
@@ -59,9 +55,7 @@ export function ToolResultCard({
           )}
           <span className="font-medium text-sm text-text-normal">{toolName}</span>
           {autoApproved && (
-            <span className="text-xs px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400">
-              auto
-            </span>
+            <span className="text-xs px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400">auto</span>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -76,11 +70,7 @@ export function ToolResultCard({
             className="p-1 rounded hover:bg-secondary/50 text-text-muted transition-colors"
             title="Copy output"
           >
-            {copied ? (
-              <CheckCheck size={14} className="text-green-400" />
-            ) : (
-              <Copy size={14} />
-            )}
+            {copied ? <CheckCheck size={14} className="text-green-400" /> : <Copy size={14} />}
           </button>
         </div>
       </div>
