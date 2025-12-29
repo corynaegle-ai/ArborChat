@@ -31,9 +31,11 @@ export function AgentPanelContainer({
     pause,
     resume,
     stop,
+    retry,
     sendMessage,
     approveTool,
-    rejectTool
+    rejectTool,
+    canRetry
   } = useAgentRunner(agentId)
 
   // Auto-start agent when first created
@@ -76,6 +78,14 @@ export function AgentPanelContainer({
     rejectTool()
   }, [rejectTool])
 
+  // Handle retry failed agent
+  const handleRetry = useCallback(async () => {
+    if (canRetry) {
+      console.log('[AgentPanelContainer] Retrying agent:', agentId)
+      await retry()
+    }
+  }, [canRetry, agentId, retry])
+
   // Handle close with cleanup
   const handleClose = useCallback(() => {
     if (runnerState.isRunning) {
@@ -103,6 +113,9 @@ export function AgentPanelContainer({
       onSendMessage={handleSendMessage}
       onPause={handlePause}
       onResume={handleResume}
+      onRetry={handleRetry}
+      canRetry={canRetry}
+      isRetrying={runnerState.isRetrying}
       onClose={handleClose}
       onMinimize={onMinimize}
       onToolApprove={handleToolApprove}

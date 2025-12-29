@@ -22,7 +22,10 @@ import { getAllAvailableModels } from './models'
 import { OllamaProvider } from './providers/ollama'
 import { setupMCPHandlers, mcpManager } from './mcp'
 import { setupPersonaHandlers } from './personas'
+import { setupNotificationHandlers, registerMainWindow } from './notifications'
+import { setupWorkJournalHandlers, cleanupWorkJournalSubscriptions } from './workJournal'
 import { credentialManager, ProviderId } from './credentials'
+import { getGitRepoInfo, getUncommittedFiles, getChangedFilesSinceBranch, getDiffStats } from './services'
 
 // Select the appropriate icon based on platform
 function getAppIcon(): string {
@@ -33,7 +36,7 @@ function getAppIcon(): string {
   return iconPng
 }
 
-function createWindow(): void {
+function createWindow(): BrowserWindow {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 900,
@@ -63,6 +66,8 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+
+  return mainWindow
 }
 
 // This method will be called when Electron has finished
@@ -113,6 +118,23 @@ app.whenReady().then(() => {
     return result.canceled ? null : result.filePaths[0]
   })
 
+  // Git Handlers
+  ipcMain.handle('git:get-repo-info', async (_, directory: string) => {
+    return getGitRepoInfo(directory)
+  })
+
+  ipcMain.handle('git:get-uncommitted-files', async (_, directory: string) => {
+    return getUncommittedFiles(directory)
+  })
+
+  ipcMain.handle('git:get-changed-files-since-branch', async (_, { directory, baseBranch }) => {
+    return getChangedFilesSinceBranch(directory, baseBranch)
+  })
+
+  ipcMain.handle('git:get-diff-stats', async (_, { directory, baseBranch }) => {
+    return getDiffStats(directory, baseBranch)
+  })
+
   // Model Discovery Handlers
   ipcMain.handle('models:get-available', async (_, { apiKey }) => {
     const ollamaUrl = getOllamaServerUrl()
@@ -159,6 +181,18 @@ app.whenReady().then(() => {
         const { AnthropicProvider } = await import('./providers/anthropic')
         return new AnthropicProvider().validateConnection(apiKey)
       }
+      case 'openai': {
+        const { OpenAIProvider } = await import('./providers/openai')
+        return new OpenAIProvider().validateConnection(apiKey)
+      }
+      case 'github': {
+        const { GitHubCopilotProvider } = await import('./providers/github-copilot')
+        return new GitHubCopilotProvider().validateConnection(apiKey)
+      }
+      case 'mistral': {
+        const { MistralProvider } = await import('./providers/mistral')
+        return new MistralProvider().validateConnection(apiKey)
+      }
       default:
         return false
     }
@@ -182,7 +216,16 @@ app.whenReady().then(() => {
   // Setup Persona handlers for AI personalities
   setupPersonaHandlers()
 
-  createWindow()
+  // Setup Notification handlers for desktop notifications
+  setupNotificationHandlers()
+
+  // Setup Work Journal handlers for agent work persistence
+  setupWorkJournalHandlers()
+
+  const mainWindow = createWindow()
+  
+  // Register main window with notification manager
+  registerMainWindow(mainWindow)
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
@@ -202,7 +245,8 @@ app.on('window-all-closed', () => {
 
 // Cleanup MCP connections before quitting
 app.on('before-quit', async () => {
-  console.log('[App] Cleaning up MCP connections...')
+  console.log('[App] Cleaning up...')
+  cleanupWorkJournalSubscriptions()
   await mcpManager.disconnectAll()
 })
 

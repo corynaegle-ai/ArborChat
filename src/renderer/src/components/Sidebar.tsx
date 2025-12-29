@@ -1,7 +1,9 @@
-import { Plus, MessageSquare, Trash2, Settings, MessagesSquare } from 'lucide-react'
+import { Plus, MessageSquare, Trash2, Settings, MessagesSquare, History } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { cn } from '../lib/utils'
 import { Conversation } from '../types'
+import { useAgentContext } from '../contexts/AgentContext'
+import { AgentList } from './agent'
 import logo from '../assets/logo.png'
 
 interface SidebarProps {
@@ -12,6 +14,8 @@ interface SidebarProps {
   onDelete: (id: string) => void
   onRename: (id: string, title: string) => void
   onSettings: () => void
+  // Phase 5: Session resumption
+  onResumeSession?: () => void
 }
 
 function Logo() {
@@ -43,6 +47,7 @@ function EmptyConversations() {
     </div>
   )
 }
+
 
 function ConversationItem({
   conversation,
@@ -161,6 +166,7 @@ function ConversationItem({
   )
 }
 
+
 export function Sidebar({
   conversations,
   activeId,
@@ -168,8 +174,37 @@ export function Sidebar({
   onNewChat,
   onDelete,
   onRename,
-  onSettings
+  onSettings,
+  onResumeSession
 }: SidebarProps) {
+  // Get agent context for sidebar agent list
+  const { 
+    getAgentSummaries, 
+    state: agentState, 
+    setActiveAgent, 
+    removeAgent, 
+    togglePanel 
+  } = useAgentContext()
+
+  const agentSummaries = getAgentSummaries()
+
+  // Handle agent selection - opens panel and sets active
+  const handleSelectAgent = (agentId: string) => {
+    setActiveAgent(agentId)
+    togglePanel(true)
+  }
+
+  // Handle agent close
+  const handleCloseAgent = (agentId: string) => {
+    removeAgent(agentId)
+  }
+
+  // Handle agent retry - select and open panel to show retry button
+  const handleRetryAgent = (agentId: string) => {
+    setActiveAgent(agentId)
+    togglePanel(true)
+  }
+
   return (
     <div className="flex flex-col w-72 bg-tertiary h-full border-r border-secondary/50 shrink-0">
       {/* Header with Logo */}
@@ -214,10 +249,38 @@ export function Sidebar({
         ) : (
           <EmptyConversations />
         )}
+
+        {/* Agent List Section */}
+        {agentSummaries.length > 0 && (
+          <div className="border-t border-secondary/50 pt-2 mt-3">
+            <AgentList
+              agents={agentSummaries}
+              activeAgentId={agentState.activeAgentId}
+              onSelectAgent={handleSelectAgent}
+              onCloseAgent={handleCloseAgent}
+              onRetryAgent={handleRetryAgent}
+            />
+          </div>
+        )}
       </div>
 
       {/* Footer with Settings */}
-      <div className="p-2 border-t border-secondary/50">
+      <div className="p-2 border-t border-secondary/50 space-y-0.5">
+        {/* Phase 5: Resume Session Button */}
+        {onResumeSession && (
+          <button
+            onClick={onResumeSession}
+            className={cn(
+              'w-full flex items-center gap-2 p-2.5 rounded-lg',
+              'text-text-muted hover:text-text-normal hover:bg-secondary/40',
+              'transition-colors duration-150',
+              'focus:outline-none focus:ring-2 focus:ring-primary/30'
+            )}
+          >
+            <History size={16} />
+            <span className="text-sm font-medium">Resume Session</span>
+          </button>
+        )}
         <button
           onClick={onSettings}
           className={cn(

@@ -24,7 +24,7 @@ export interface AIModel {
   id: string
   name: string
   description: string
-  provider: 'gemini' | 'ollama' | 'anthropic'
+  provider: 'gemini' | 'ollama' | 'anthropic' | 'github' | 'openai' | 'mistral'
   isLocal: boolean
 }
 

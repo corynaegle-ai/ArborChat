@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
-import { X, Key, Wrench, User } from 'lucide-react'
+import { X, Key, Wrench, User, Bell } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { APIKeysSection } from './sections/APIKeysSection'
 import { ToolsSection } from './sections/ToolsSection'
 import { PersonasSection } from './sections/PersonasSection'
+import { NotificationsSection } from './sections/NotificationsSection'
 
-type SettingsSection = 'api-keys' | 'tools' | 'personas'
+type SettingsSection = 'api-keys' | 'tools' | 'personas' | 'notifications'
 
 interface SettingsPanelProps {
   isOpen: boolean
@@ -36,6 +37,12 @@ const MENU_ITEMS = [
     label: 'Personas',
     icon: User,
     description: 'Manage AI personalities'
+  },
+  {
+    id: 'notifications' as const,
+    label: 'Notifications',
+    icon: Bell,
+    description: 'Configure alerts & toasts'
   }
 ]
 
@@ -154,6 +161,7 @@ export function SettingsPanel({
                 onActivatePersona={onActivatePersona}
               />
             )}
+            {activeSection === 'notifications' && <NotificationsSection />}
           </main>
         </div>
       </div>

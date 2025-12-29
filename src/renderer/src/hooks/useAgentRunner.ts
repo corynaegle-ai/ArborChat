@@ -1,11 +1,12 @@
 // src/renderer/src/hooks/useAgentRunner.ts
-// Core Agent Execution Engine - Phase 2
+// Core Agent Execution Engine - Phase 2 + Phase 4 Work Journal Integration
 // Author: Alex Chen (Distinguished Software Architect)
 
 import { useCallback, useRef, useEffect, useState } from 'react'
 import { useAgentContext } from '../contexts/AgentContext'
 import { useMCP } from '../components/mcp'
 import { parseToolCalls, stripToolCalls, formatToolResult } from '../lib/toolParser'
+import { useWorkJournal } from './useWorkJournal'
 import type { Agent, AgentToolPermission, ToolRiskLevel } from '../types/agent'
 
 /**
@@ -81,21 +82,28 @@ function shouldAutoApprove(
 export interface AgentRunnerState {
   isRunning: boolean
   isStreaming: boolean
+  isRetrying: boolean
   streamingContent: string
   error: string | null
 }
 
 export interface UseAgentRunnerResult {
   state: AgentRunnerState
+  workSessionId: string | null
   start: () => Promise<void>
   pause: () => void
   resume: () => Promise<void>
   stop: () => void
+  retry: () => Promise<void>
   sendMessage: (content: string) => Promise<void>
   approveTool: (modifiedArgs?: Record<string, unknown>) => Promise<void>
   rejectTool: () => void
+  canRetry: boolean
+  forceCleanup: () => void
 }
 
+// Checkpoint configuration
+const CHECKPOINT_INTERVAL = 20 // Create checkpoint every N entries
 
 /**
  * useAgentRunner - Core execution loop for autonomous agents
@@ -107,6 +115,7 @@ export interface UseAgentRunnerResult {
  * - Auto-approval based on permission levels
  * - Tool execution and result handling
  * - Agent state updates
+ * - Work journal integration for persistence and audit trail
  */
 export function useAgentRunner(agentId: string): UseAgentRunnerResult {
   const {
@@ -121,10 +130,28 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
   
   const { connected: mcpConnected, tools: mcpTools } = useMCP()
   
+  // Work Journal Integration
+  const {
+    createSession,
+    logThinking,
+    logToolRequest,
+    logToolResult,
+    logError,
+    logFileOperation,
+    updateSessionStatus,
+    createCheckpoint
+  } = useWorkJournal()
+  
+  // Track work session for this agent
+  const workSessionIdRef = useRef<string | null>(null)
+  const entryCountRef = useRef<number>(0)
+  const isMountedRef = useRef(true)
+  
   // Local state
   const [runnerState, setRunnerState] = useState<AgentRunnerState>({
     isRunning: false,
     isStreaming: false,
+    isRetrying: false,
     streamingContent: '',
     error: null
   })
@@ -136,13 +163,165 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
   const isExecutingRef = useRef(false)
   const pendingToolResultRef = useRef<string | null>(null)
   
+  // Track executed tools for completion verification
+  // This prevents hallucinated completions - agent must actually use tools
+  const executedToolsRef = useRef<Array<{
+    tool: string
+    args: Record<string, unknown>
+    success: boolean
+    timestamp: number
+  }>>([])
+  
+  /**
+   * Tools that constitute "meaningful work" for completion verification
+   * Read-only tools don't count as work accomplished
+   */
+  const WORK_TOOLS = new Set([
+    'write_file',
+    'edit_block', 
+    'str_replace',
+    'create_directory',
+    'move_file',
+    'start_process',      // Could be git commit, npm commands, etc.
+    'interact_with_process'
+  ])
+  
   // Get agent helper
   const getAgentSafe = useCallback((): Agent | null => {
     return getAgent(agentId) || null
   }, [agentId, getAgent])
 
   /**
+   * Record a tool execution for completion verification
+   */
+  const recordToolExecution = useCallback((
+    tool: string,
+    args: Record<string, unknown>,
+    success: boolean
+  ) => {
+    executedToolsRef.current.push({
+      tool,
+      args,
+      success,
+      timestamp: Date.now()
+    })
+    console.log(`[AgentRunner] Recorded tool execution: ${tool} (success: ${success})`)
+  }, [])
+
+  /**
+   * Reset tool execution tracking (called when agent starts)
+   */
+  const resetToolTracking = useCallback(() => {
+    executedToolsRef.current = []
+    console.log('[AgentRunner] Reset tool execution tracking')
+  }, [])
+
+  /**
+   * Check if agent has done meaningful work via tool execution
+   * 
+   * Returns an object with:
+   * - hasMeaningfulWork: boolean - whether work-producing tools were used successfully
+   * - workToolsUsed: string[] - list of work tools that succeeded
+   * - totalToolCalls: number - total tools called
+   * - successfulWorkCalls: number - successful work tool calls
+   */
+  const verifyWorkCompleted = useCallback((): {
+    hasMeaningfulWork: boolean
+    workToolsUsed: string[]
+    totalToolCalls: number
+    successfulWorkCalls: number
+  } => {
+    const executions = executedToolsRef.current
+    const totalToolCalls = executions.length
+    
+    // Filter to successful work tool executions
+    const successfulWorkExecutions = executions.filter(
+      exec => exec.success && WORK_TOOLS.has(exec.tool)
+    )
+    
+    const workToolsUsed = [...new Set(successfulWorkExecutions.map(e => e.tool))]
+    const successfulWorkCalls = successfulWorkExecutions.length
+    
+    console.log(`[AgentRunner] Work verification: ${successfulWorkCalls}/${totalToolCalls} tool calls were successful work operations`)
+    console.log(`[AgentRunner] Work tools used: ${workToolsUsed.join(', ') || 'none'}`)
+    
+    return {
+      hasMeaningfulWork: successfulWorkCalls > 0,
+      workToolsUsed,
+      totalToolCalls,
+      successfulWorkCalls
+    }
+  }, [])
+
+  /**
+   * Helper: Maybe create checkpoint if entry count threshold reached
+   */
+  const maybeCreateCheckpoint = useCallback(async () => {
+    if (!workSessionIdRef.current) return
+    
+    if (entryCountRef.current >= CHECKPOINT_INTERVAL) {
+      try {
+        await createCheckpoint(workSessionIdRef.current)
+        entryCountRef.current = 0
+        console.log('[AgentRunner] Created automatic checkpoint')
+      } catch (err) {
+        console.error('[AgentRunner] Failed to create checkpoint:', err)
+      }
+    }
+  }, [createCheckpoint])
+
+  /**
+   * Helper: Detect and log file operations from tool results
+   */
+  const detectAndLogFileOperations = useCallback(async (
+    toolName: string,
+    args: Record<string, unknown>,
+    result: { success: boolean; result?: string }
+  ) => {
+    if (!workSessionIdRef.current || !result.success) return
+    
+    // Map tool names to file operations
+    const fileOpTools: Record<string, 'read' | 'create' | 'modify' | 'delete'> = {
+      'read_file': 'read',
+      'read_multiple_files': 'read',
+      'write_file': 'create', // Could be create or modify
+      'edit_block': 'modify',
+      'str_replace': 'modify',
+      'create_directory': 'create',
+      'move_file': 'modify'
+    }
+    
+    const operation = fileOpTools[toolName]
+    if (!operation) return
+    
+    // Extract file path from args
+    const filePath = (args.path || args.file_path || args.source) as string | undefined
+    if (!filePath) return
+    
+    try {
+      await logFileOperation(
+        workSessionIdRef.current,
+        operation,
+        filePath,
+        result.result?.substring(0, 200), // Preview
+        undefined // lines affected - could parse from result
+      )
+      entryCountRef.current++
+    } catch (err) {
+      console.error('[AgentRunner] Failed to log file operation:', err)
+    }
+  }, [logFileOperation])
+
+  /**
    * Build messages array for AI context
+   * 
+   * CRITICAL: Message ordering validation for strict models (DeepSeek R1, o1, o3)
+   * These models require the last message to be 'user' or 'tool' role, never 'assistant'.
+   * 
+   * This function ensures valid message alternation by:
+   * 1. Building the context from system prompt, seed messages, and history
+   * 2. Adding pending tool results if present
+   * 3. Validating and fixing ordering before returning
    */
   const buildContextMessages = useCallback((agent: Agent): Array<{ role: string; content: string }> => {
     const messages: Array<{ role: string; content: string }> = []
@@ -172,6 +351,18 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
       pendingToolResultRef.current = null
     }
     
+    // MESSAGE ORDERING VALIDATION
+    // Some models (DeepSeek R1, o1, o3) require the last message to be 'user' role.
+    // If the conversation ends with 'assistant', add a continuation prompt.
+    const lastMessage = messages[messages.length - 1]
+    if (lastMessage && lastMessage.role === 'assistant') {
+      console.warn('[AgentRunner] Message ordering fix: Last message was assistant, adding continuation prompt')
+      messages.push({
+        role: 'user',
+        content: 'Please continue with your task. If you were in the middle of something, resume from where you left off. If you need to use a tool, proceed with the tool call.'
+      })
+    }
+    
     return messages
   }, [])
 
@@ -188,10 +379,15 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
     try {
       // Update status to running
       updateAgentStatus(agentId, 'running')
-      setRunnerState(prev => ({ ...prev, isRunning: true, isStreaming: true, error: null }))
+      setRunnerState(prev => ({ ...prev, isRunning: true, isStreaming: true, isRetrying: false, error: null }))
       
       // Build context
       const messages = buildContextMessages(agent)
+      
+      // DIAGNOSTIC: Log message structure for debugging API errors
+      const messageSummary = messages.map((m, i) => `${i}: ${m.role} (${m.content.length} chars)`).join('\n')
+      console.log(`[AgentRunner] Message structure for ${agent.config.modelId}:\n${messageSummary}`)
+      console.log(`[AgentRunner] Last message role: ${messages[messages.length - 1]?.role}`)
       
       // Get API key (for Gemini provider)
       const apiKey = await window.api.credentials.getKey('gemini')
@@ -222,6 +418,11 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
       window.api.onDone(async () => {
         cleanup()
         
+        if (!isMountedRef.current) {
+          isExecutingRef.current = false
+          return
+        }
+        
         const finalContent = streamBufferRef.current
         setRunnerState(prev => ({ ...prev, isStreaming: false }))
         
@@ -229,6 +430,17 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
           isExecutingRef.current = false
           setRunnerState(prev => ({ ...prev, isRunning: false }))
           return
+        }
+        
+        // Log AI thinking/response to work journal
+        if (workSessionIdRef.current && finalContent.length > 0) {
+          try {
+            await logThinking(workSessionIdRef.current, finalContent)
+            entryCountRef.current++
+            await maybeCreateCheckpoint()
+          } catch (err) {
+            console.error('[AgentRunner] Failed to log thinking:', err)
+          }
         }
         
         // Parse tool calls
@@ -263,7 +475,23 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
       // Error handler
       window.api.onError((err) => {
         cleanup()
+        
+        if (!isMountedRef.current) {
+          isExecutingRef.current = false
+          return
+        }
+        
         console.error('[AgentRunner] AI Error:', err)
+        
+        // Log error to work journal
+        if (workSessionIdRef.current) {
+          logError(
+            workSessionIdRef.current,
+            'ai_error',
+            err,
+            true // recoverable via retry
+          ).catch(console.error)
+        }
         
         addAgentStep(agentId, {
           type: 'error',
@@ -284,11 +512,21 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
       const errorMsg = error instanceof Error ? error.message : String(error)
       console.error('[AgentRunner] Execution error:', error)
       
+      // Log error to work journal
+      if (workSessionIdRef.current) {
+        logError(
+          workSessionIdRef.current,
+          'execution_error',
+          errorMsg,
+          false
+        ).catch(console.error)
+      }
+      
       updateAgentStatus(agentId, 'failed', errorMsg)
       setRunnerState(prev => ({ ...prev, isRunning: false, isStreaming: false, error: errorMsg }))
       isExecutingRef.current = false
     }
-  }, [agentId, getAgentSafe, buildContextMessages, updateAgentStatus, addAgentMessage, updateAgentMessage, addAgentStep])
+  }, [agentId, getAgentSafe, buildContextMessages, updateAgentStatus, addAgentMessage, updateAgentMessage, addAgentStep, logThinking, logError, maybeCreateCheckpoint])
 
 
   /**
@@ -300,6 +538,25 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
     originalContent: string,
     cleanContent: string
   ) => {
+    if (!isMountedRef.current) return
+    
+    // Log tool request to work journal
+    if (workSessionIdRef.current) {
+      try {
+        const riskLevel = getToolRiskLevel(toolCall.tool)
+        await logToolRequest(
+          workSessionIdRef.current,
+          toolCall.tool,
+          toolCall.args,
+          riskLevel
+        )
+        entryCountRef.current++
+        await maybeCreateCheckpoint()
+      } catch (err) {
+        console.error('[AgentRunner] Failed to log tool request:', err)
+      }
+    }
+    
     // Get config for always-approve list
     let alwaysApproveTools: string[] = []
     try {
@@ -331,10 +588,44 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
     
     if (autoApprove) {
       console.log(`[AgentRunner] Auto-approving tool: ${toolCall.tool}`)
+      const executionStart = Date.now()
       
       // Execute tool directly
       try {
         const result = await executeToolInternal(toolCall.tool, toolCall.args, toolCall.explanation)
+        const executionDuration = Date.now() - executionStart
+        
+        // Log tool result to work journal
+        if (workSessionIdRef.current) {
+          try {
+            const resultStr = typeof result.result === 'string' ? result.result : String(result.result ?? '')
+            await logToolResult(
+              workSessionIdRef.current,
+              toolCall.tool,
+              result.success,
+              resultStr,
+              {
+                truncated: resultStr.length > 5000,
+                errorMessage: result.error,
+                duration: executionDuration
+              }
+            )
+            entryCountRef.current++
+            
+            // Check for file operations in the result
+            await detectAndLogFileOperations(toolCall.tool, toolCall.args, {
+              success: result.success,
+              result: resultStr
+            })
+            
+            await maybeCreateCheckpoint()
+          } catch (err) {
+            console.error('[AgentRunner] Failed to log tool result:', err)
+          }
+        }
+        
+        // Record tool execution for completion verification
+        recordToolExecution(toolCall.tool, toolCall.args, result.success)
         
         // Update step with result
         updateAgentStep(agentId, step.id, {
@@ -370,6 +661,16 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error)
         
+        // Log error to work journal
+        if (workSessionIdRef.current) {
+          logError(
+            workSessionIdRef.current,
+            'tool_execution_error',
+            errorMsg,
+            true
+          ).catch(console.error)
+        }
+        
         updateAgentStep(agentId, step.id, {
           toolCall: {
             name: toolCall.tool,
@@ -385,6 +686,9 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
           content: `Tool execution failed: ${errorMsg}`,
           timestamp: Date.now()
         })
+        
+        // Record failed tool execution for completion verification
+        recordToolExecution(toolCall.tool, toolCall.args, false)
         
         updateAgentStatus(agentId, 'failed', errorMsg)
         setRunnerState(prev => ({ ...prev, isRunning: false, error: errorMsg }))
@@ -409,7 +713,7 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
       setRunnerState(prev => ({ ...prev, isRunning: false }))
       isExecutingRef.current = false
     }
-  }, [agentId, addAgentStep, updateAgentStep, updateAgentStatus, setPendingTool, executeLoop])
+  }, [agentId, addAgentStep, updateAgentStep, updateAgentStatus, setPendingTool, executeLoop, logToolRequest, logToolResult, logError, detectAndLogFileOperations, maybeCreateCheckpoint, recordToolExecution])
 
   /**
    * Internal tool execution
@@ -428,17 +732,81 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
 
   /**
    * Check if message indicates task completion
+   * 
+   * RUNTIME VERIFICATION: Prevents hallucinated completions by requiring:
+   * 1. Explicit "TASK COMPLETED" signal in message
+   * 2. File path evidence in the completion message
+   * 3. Actual successful tool executions tracked at runtime
+   * 
+   * This triple-check ensures agents can't claim completion without proof.
    */
   const isCompletionMessage = useCallback((content: string): boolean => {
-    const completionPatterns = [
-      /TASK COMPLETED/i,
-      /task is complete/i,
-      /completed successfully/i,
-      /finished the task/i,
-      /all done/i
-    ]
-    return completionPatterns.some(pattern => pattern.test(content))
-  }, [])
+    // Check 1: Explicit completion signal
+    const hasExplicitCompletion = /TASK COMPLETED/i.test(content)
+    if (!hasExplicitCompletion) {
+      return false
+    }
+    
+    // Check 2: File path evidence in message
+    const hasFileEvidence = /(?:\/[\w.-]+)+\.(ts|tsx|js|jsx|json|md|css|html)/i.test(content)
+    if (!hasFileEvidence) {
+      console.warn('[AgentRunner] Completion claimed but no file paths mentioned')
+      return false
+    }
+    
+    // Check 3: Runtime verification - did agent actually execute work tools?
+    const workVerification = verifyWorkCompleted()
+    if (!workVerification.hasMeaningfulWork) {
+      console.warn('[AgentRunner] HALLUCINATION DETECTED: Agent claimed completion but executed NO work tools!')
+      console.warn(`[AgentRunner] Total tool calls: ${workVerification.totalToolCalls}, Successful work calls: ${workVerification.successfulWorkCalls}`)
+      
+      // Add a warning step to the agent's execution history
+      addAgentStep(agentId, {
+        type: 'error',
+        content: `⚠️ Completion verification failed: No work-producing tools (write_file, edit_block, etc.) were successfully executed. The agent may have hallucinated actions.`,
+        timestamp: Date.now()
+      })
+      
+      return false
+    }
+    
+    console.log(`[AgentRunner] Completion verified: ${workVerification.successfulWorkCalls} work operations completed`)
+    console.log(`[AgentRunner] Tools used: ${workVerification.workToolsUsed.join(', ')}`)
+    
+    return true
+  }, [verifyWorkCompleted, addAgentStep, agentId])
+
+  /**
+   * Perform cleanup (for crash scenarios)
+   */
+  const performCleanup = useCallback(() => {
+    console.log(`[AgentRunner ${agentId}] Performing cleanup...`)
+    
+    // Mark work session as crashed if still active
+    if (workSessionIdRef.current) {
+      // Fire-and-forget - we're cleaning up
+      updateSessionStatus(workSessionIdRef.current, 'crashed')
+        .then(() => {
+          if (workSessionIdRef.current) {
+            return createCheckpoint(workSessionIdRef.current, true)
+          }
+          return undefined
+        })
+        .catch(console.error)
+    }
+    
+    abortControllerRef.current?.abort()
+    window.api.offAI()
+    setPendingTool(agentId, null)
+    isExecutingRef.current = false
+    setRunnerState({
+      isRunning: false,
+      isStreaming: false,
+      isRetrying: false,
+      streamingContent: '',
+      error: null
+    })
+  }, [agentId, updateSessionStatus, createCheckpoint, setPendingTool])
 
   /**
    * Start agent execution
@@ -447,12 +815,31 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
     const agent = getAgentSafe()
     if (!agent) return
     
+    // Reset tool execution tracking for fresh start
+    resetToolTracking()
+    
+    // Create work journal session
+    if (!workSessionIdRef.current) {
+      try {
+        const session = await createSession(
+          agent.sourceConversationId,
+          agent.config.instructions
+        )
+        workSessionIdRef.current = session.id
+        entryCountRef.current = 0
+        console.log(`[AgentRunner] Created work session: ${session.id}`)
+      } catch (err) {
+        console.error('[AgentRunner] Failed to create work session:', err)
+        // Continue anyway - journaling failure shouldn't block agent
+      }
+    }
+    
     if (!mcpConnected) {
       console.warn('[AgentRunner] MCP not connected, starting anyway')
     }
     
     await executeLoop()
-  }, [getAgentSafe, mcpConnected, executeLoop])
+  }, [getAgentSafe, mcpConnected, executeLoop, createSession, resetToolTracking])
 
   /**
    * Pause agent execution
@@ -461,18 +848,33 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
     abortControllerRef.current?.abort()
     window.api.offAI()
     
+    // Pause work session
+    if (workSessionIdRef.current) {
+      updateSessionStatus(workSessionIdRef.current, 'paused')
+        .catch(console.error)
+    }
+    
     updateAgentStatus(agentId, 'paused')
     setRunnerState(prev => ({ ...prev, isRunning: false, isStreaming: false }))
     isExecutingRef.current = false
-  }, [agentId, updateAgentStatus])
+  }, [agentId, updateAgentStatus, updateSessionStatus])
 
 
   /**
    * Resume paused agent
    */
   const resume = useCallback(async () => {
+    // Resume work session
+    if (workSessionIdRef.current) {
+      try {
+        await updateSessionStatus(workSessionIdRef.current, 'active')
+      } catch (err) {
+        console.error('[AgentRunner] Failed to resume work session:', err)
+      }
+    }
+    
     await executeLoop()
-  }, [executeLoop])
+  }, [executeLoop, updateSessionStatus])
 
   /**
    * Stop agent execution
@@ -481,13 +883,25 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
     abortControllerRef.current?.abort()
     window.api.offAI()
     
+    // Complete work session
+    if (workSessionIdRef.current) {
+      updateSessionStatus(workSessionIdRef.current, 'completed')
+        .then(() => {
+          if (workSessionIdRef.current) {
+            return createCheckpoint(workSessionIdRef.current, true)
+          }
+          return undefined
+        })
+        .catch(console.error)
+    }
+    
     updateAgentStatus(agentId, 'completed')
     setRunnerState(prev => ({ ...prev, isRunning: false, isStreaming: false }))
     isExecutingRef.current = false
     
     // Clear any pending tool
     setPendingTool(agentId, null)
-  }, [agentId, updateAgentStatus, setPendingTool])
+  }, [agentId, updateAgentStatus, setPendingTool, updateSessionStatus, createCheckpoint])
 
   /**
    * Send a message to the agent (user intervention)
@@ -512,6 +926,7 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
     
     const toolCall = agent.pendingToolCall
     const args = modifiedArgs || toolCall.args
+    const executionStart = Date.now()
     
     // Find the pending step and update it
     const pendingStep = agent.steps.find(
@@ -534,6 +949,39 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
     // Execute the tool
     try {
       const result = await executeToolInternal(toolCall.tool, args, toolCall.explanation)
+      const executionDuration = Date.now() - executionStart
+      
+      // Log tool result to work journal
+      if (workSessionIdRef.current) {
+        try {
+          const resultStr = typeof result.result === 'string' ? result.result : String(result.result ?? '')
+          await logToolResult(
+            workSessionIdRef.current,
+            toolCall.tool,
+            result.success,
+            resultStr,
+            {
+              truncated: resultStr.length > 5000,
+              errorMessage: result.error,
+              duration: executionDuration
+            }
+          )
+          entryCountRef.current++
+          
+          // Check for file operations in the result
+          await detectAndLogFileOperations(toolCall.tool, args, {
+            success: result.success,
+            result: resultStr
+          })
+          
+          await maybeCreateCheckpoint()
+        } catch (err) {
+          console.error('[AgentRunner] Failed to log tool result:', err)
+        }
+      }
+      
+      // Record tool execution for completion verification (manual approval flow)
+      recordToolExecution(toolCall.tool, args, result.success)
       
       // Update step with result
       if (pendingStep) {
@@ -564,6 +1012,16 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error)
       
+      // Log error to work journal
+      if (workSessionIdRef.current) {
+        logError(
+          workSessionIdRef.current,
+          'tool_execution_error',
+          errorMsg,
+          true
+        ).catch(console.error)
+      }
+      
       if (pendingStep) {
         updateAgentStep(agentId, pendingStep.id, {
           toolCall: {
@@ -580,10 +1038,13 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
         timestamp: Date.now()
       })
       
+      // Record failed tool execution for completion verification (manual approval flow)
+      recordToolExecution(toolCall.tool, args, false)
+      
       updateAgentStatus(agentId, 'failed', errorMsg)
       setRunnerState(prev => ({ ...prev, isRunning: false, error: errorMsg }))
     }
-  }, [agentId, getAgentSafe, updateAgentStep, addAgentStep, setPendingTool, executeToolInternal, executeLoop, updateAgentStatus])
+  }, [agentId, getAgentSafe, updateAgentStep, addAgentStep, setPendingTool, executeToolInternal, executeLoop, updateAgentStatus, logToolResult, logError, detectAndLogFileOperations, maybeCreateCheckpoint, recordToolExecution])
 
   /**
    * Reject a pending tool call
@@ -606,6 +1067,17 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
       })
     }
     
+    // Log rejection to work journal
+    if (workSessionIdRef.current) {
+      logToolResult(
+        workSessionIdRef.current,
+        agent.pendingToolCall.tool,
+        false,
+        'User rejected tool execution',
+        { errorMessage: 'Rejected by user' }
+      ).catch(console.error)
+    }
+    
     // Clear pending tool
     setPendingTool(agentId, null)
     
@@ -625,25 +1097,74 @@ User rejected the tool execution. Please acknowledge and continue with an altern
     
     // Continue execution
     executeLoop()
-  }, [agentId, getAgentSafe, updateAgentStep, addAgentStep, setPendingTool, executeLoop])
+  }, [agentId, getAgentSafe, updateAgentStep, addAgentStep, setPendingTool, executeLoop, logToolResult])
+
+  /**
+   * Check if retry is possible
+   */
+  const canRetry = useCallback((): boolean => {
+    const agent = getAgentSafe()
+    return agent?.status === 'failed' && !runnerState.isRunning
+  }, [getAgentSafe, runnerState.isRunning])
+
+  /**
+   * Retry a failed agent
+   */
+  const retry = useCallback(async () => {
+    const agent = getAgentSafe()
+    if (!agent || agent.status !== 'failed') return
+    
+    // Set retrying state
+    setRunnerState(prev => ({ ...prev, error: null, isRetrying: true }))
+    
+    // Resume work session if exists, or continue with new session
+    if (workSessionIdRef.current) {
+      try {
+        await updateSessionStatus(workSessionIdRef.current, 'active')
+      } catch (err) {
+        console.error('[AgentRunner] Failed to update session for retry:', err)
+      }
+    }
+    
+    // Restart execution (this will reset isRetrying via normal flow)
+    await executeLoop()
+  }, [getAgentSafe, executeLoop, updateSessionStatus])
+
+  // Track mounted state
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       abortControllerRef.current?.abort()
       window.api.offAI()
+      
+      // Mark work session as crashed if still active on unmount
+      if (workSessionIdRef.current) {
+        updateSessionStatus(workSessionIdRef.current, 'crashed')
+          .catch(console.error)
+      }
     }
-  }, [])
+  }, [updateSessionStatus])
 
   return {
     state: runnerState,
+    workSessionId: workSessionIdRef.current,
     start,
     pause,
     resume,
     stop,
+    retry,
     sendMessage,
     approveTool,
-    rejectTool
+    rejectTool,
+    canRetry: canRetry(),
+    forceCleanup: performCleanup
   }
 }
 
