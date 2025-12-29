@@ -10,6 +10,7 @@ import { PersonaMetadata } from './types/persona'
 import type { AgentToolPermission, AgentMessage } from './types/agent'
 import { Loader2 } from 'lucide-react'
 import { useToolChat } from './hooks'
+import { parseAIError } from './lib/errorParser'
 
 function ApiKeyPrompt({ onSave }: { onSave: (k: string) => void }) {
   const [key, setKey] = useState('')
@@ -78,7 +79,6 @@ function ApiKeyPrompt({ onSave }: { onSave: (k: string) => void }) {
   )
 }
 
-
 // Main content component that uses MCP hooks (must be inside MCPProvider)
 function AppContent({ apiKey }: { apiKey: string }) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
@@ -102,7 +102,7 @@ function AppContent({ apiKey }: { apiKey: string }) {
   const [pending, setPending] = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
   const streamBufferRef = useRef('')
-  
+
   // Tool chat integration
   const {
     mcpConnected,
@@ -117,12 +117,12 @@ function AppContent({ apiKey }: { apiKey: string }) {
     handleToolReject,
     clearPendingTool
   } = useToolChat()
-  
+
   // Agent state (Phase 1)
   const [showAgentLaunchModal, setShowAgentLaunchModal] = useState(false)
   const [agentLaunchContext, setAgentLaunchContext] = useState<string | undefined>(undefined)
   const agentContext = useAgentContext()
-  
+
   // Refs for continuation context
   const pendingContextRef = useRef<any[]>([])
   const pendingParentIdRef = useRef<string | null>(null)
@@ -148,7 +148,7 @@ function AppContent({ apiKey }: { apiKey: string }) {
       setPending(false)
       setActiveThreadRootId(null)
       clearPendingTool()
-      
+
       // Then fetch messages for the new conversation
       window.api.getMessages(activeId).then(setAllMessages)
     } else {
@@ -161,17 +161,19 @@ function AppContent({ apiKey }: { apiKey: string }) {
 
   // Load personas list on mount (Phase 5)
   useEffect(() => {
-    window.api.personas.list()
+    window.api.personas
+      .list()
       .then(setPersonas)
-      .catch(err => console.warn('[App] Failed to load personas:', err))
+      .catch((err) => console.warn('[App] Failed to load personas:', err))
   }, [])
 
   // Load persona content when active persona changes (Phase 5)
   useEffect(() => {
     if (activePersonaId) {
-      window.api.personas.getPrompt(activePersonaId)
+      window.api.personas
+        .getPrompt(activePersonaId)
         .then(setActivePersonaContent)
-        .catch(err => {
+        .catch((err) => {
           console.warn('[App] Failed to load persona content:', err)
           setActivePersonaContent(null)
         })
@@ -183,15 +185,16 @@ function AppContent({ apiKey }: { apiKey: string }) {
   // Derive active persona name from personas list (Phase 5)
   const activePersonaName = useMemo(() => {
     if (!activePersonaId) return null
-    const persona = personas.find(p => p.id === activePersonaId)
+    const persona = personas.find((p) => p.id === activePersonaId)
     return persona?.name || null
   }, [activePersonaId, personas])
 
   // Refresh personas when returning from settings (Phase 5)
   const refreshPersonas = useCallback(() => {
-    window.api.personas.list()
+    window.api.personas
+      .list()
       .then(setPersonas)
-      .catch(err => console.warn('[App] Failed to refresh personas:', err))
+      .catch((err) => console.warn('[App] Failed to refresh personas:', err))
   }, [])
 
   const refreshConversations = () => {
@@ -205,52 +208,64 @@ function AppContent({ apiKey }: { apiKey: string }) {
   }, [])
 
   // Handle agent creation from modal
-  const handleAgentCreate = useCallback((config: {
-    instructions: string
-    name?: string
-    toolPermission: AgentToolPermission
-    contextOptions: {
-      includeCurrentMessage: boolean
-      includeParentContext: boolean
-      parentContextDepth: number
-      includeFullConversation: boolean
-      includePersona: boolean
-    }
-    workingDirectory: string
-  }) => {
-    if (!activeId) return
+  const handleAgentCreate = useCallback(
+    (config: {
+      instructions: string
+      name?: string
+      toolPermission: AgentToolPermission
+      contextOptions: {
+        includeCurrentMessage: boolean
+        includeParentContext: boolean
+        parentContextDepth: number
+        includeFullConversation: boolean
+        includePersona: boolean
+      }
+      workingDirectory: string
+    }) => {
+      if (!activeId) return
 
-    // Convert messages to agent format
-    const conversationMessages: AgentMessage[] = allMessages.map(m => ({
-      id: m.id,
-      role: m.role as 'user' | 'assistant',
-      content: m.content,
-      timestamp: m.created_at
-    }))
+      // Convert messages to agent format
+      const conversationMessages: AgentMessage[] = allMessages.map((m) => ({
+        id: m.id,
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+        timestamp: m.created_at
+      }))
 
-    // Create the agent
-    agentContext.createAgent({
-      name: config.name,
-      instructions: config.instructions,
-      conversationId: activeId,
-      sourceMessageContent: agentLaunchContext,
-      model: selectedModel,
-      toolPermission: config.toolPermission,
-      workingDirectory: config.workingDirectory,
-      personaId: config.contextOptions.includePersona ? activePersonaId || undefined : undefined,
-      personaContent: config.contextOptions.includePersona ? activePersonaContent || undefined : undefined,
-      includeCurrentMessage: config.contextOptions.includeCurrentMessage,
-      includeParentContext: config.contextOptions.includeParentContext,
-      parentContextDepth: config.contextOptions.parentContextDepth,
-      includeFullConversation: config.contextOptions.includeFullConversation,
-      includePersona: config.contextOptions.includePersona,
-      conversationMessages
-    })
+      // Create the agent
+      agentContext.createAgent({
+        name: config.name,
+        instructions: config.instructions,
+        conversationId: activeId,
+        sourceMessageContent: agentLaunchContext,
+        model: selectedModel,
+        toolPermission: config.toolPermission,
+        workingDirectory: config.workingDirectory,
+        personaId: config.contextOptions.includePersona ? activePersonaId || undefined : undefined,
+        personaContent: config.contextOptions.includePersona
+          ? activePersonaContent || undefined
+          : undefined,
+        includeCurrentMessage: config.contextOptions.includeCurrentMessage,
+        includeParentContext: config.contextOptions.includeParentContext,
+        parentContextDepth: config.contextOptions.parentContextDepth,
+        includeFullConversation: config.contextOptions.includeFullConversation,
+        includePersona: config.contextOptions.includePersona,
+        conversationMessages
+      })
 
-    setShowAgentLaunchModal(false)
-    setAgentLaunchContext(undefined)
-  }, [activeId, allMessages, agentLaunchContext, selectedModel, activePersonaId, activePersonaContent, agentContext])
-
+      setShowAgentLaunchModal(false)
+      setAgentLaunchContext(undefined)
+    },
+    [
+      activeId,
+      allMessages,
+      agentLaunchContext,
+      selectedModel,
+      activePersonaId,
+      activePersonaContent,
+      agentContext
+    ]
+  )
 
   // Views
   const mainMessages = useMemo(() => {
@@ -294,115 +309,127 @@ function AppContent({ apiKey }: { apiKey: string }) {
     return allMessages.find((m) => m.id === activeThreadRootId) || null
   }, [allMessages, activeThreadRootId])
 
-
   // Stream AI response with tool detection
-  const streamAI = useCallback((context: any[], parentId: string | null) => {
-    setPending(true)
-    setStreamingContent('')
-    streamBufferRef.current = ''
-    pendingContextRef.current = context
-    pendingParentIdRef.current = parentId
+  const streamAI = useCallback(
+    (context: any[], parentId: string | null) => {
+      setPending(true)
+      setStreamingContent('')
+      streamBufferRef.current = ''
+      pendingContextRef.current = context
+      pendingParentIdRef.current = parentId
 
-    const cleanup = () => {
-      window.api.offAI()
-    }
-
-    window.api.onToken((token) => {
-      streamBufferRef.current += token
-      setStreamingContent(streamBufferRef.current)
-    })
-
-    window.api.onDone(async () => {
-      const finalContent = streamBufferRef.current
-      cleanup()
-      
-      if (!finalContent) {
-        setPending(false)
-        return
+      const cleanup = () => {
+        window.api.offAI()
       }
 
-      // Debug: Log AI response for tool detection
-      console.log('[App] AI Response:', finalContent.substring(0, 500))
+      window.api.onToken((token) => {
+        streamBufferRef.current += token
+        setStreamingContent(streamBufferRef.current)
+      })
 
-      // Parse tool calls WITHOUT setting state first
-      const { hasToolCall, cleanContent, toolName, toolArgs, toolExplanation } = parseToolCall(finalContent)
-      
-      if (hasToolCall && toolName && toolArgs) {
-        // Tool detected - check if it's in the always-approve list BEFORE showing card
-        setStreamingContent(cleanContent)
-        
-        try {
-          const config = await window.api.mcp.getConfig()
-          const alwaysApproveTools = config.alwaysApproveTools || []
-          
-          if (alwaysApproveTools.includes(toolName)) {
-            // Auto-approve: execute directly without showing card
-            console.log(`[App] Auto-approving always-approved tool: ${toolName}`)
-            
-            // Save the AI message with the tool request
-            const aiMsg = await window.api.addMessage(
-              activeId!, 
-              'assistant', 
-              finalContent,
-              parentId
-            )
-            setAllMessages((prev) => [...prev, aiMsg])
-            
-            // Execute tool directly
-            const toolResultContext = await executeToolDirectly(toolName, toolArgs, toolExplanation)
-            
-            // Build continuation context with tool result
-            const continueContext = [
-              ...pendingContextRef.current,
-              { role: 'assistant', content: finalContent },
-              { role: 'user', content: `Tool execution result:\n\n${toolResultContext}\n\nPlease continue based on this result.` }
-            ]
+      window.api.onDone(async () => {
+        const finalContent = streamBufferRef.current
+        cleanup()
 
-            setStreamingContent('')
-            
-            // Continue the conversation
-            streamAI(continueContext, parentId)
-          } else {
-            // Not auto-approved: show the approval card
-            console.log('[App] Tool call detected, waiting for approval')
+        if (!finalContent) {
+          setPending(false)
+          return
+        }
+
+        // Debug: Log AI response for tool detection
+        console.log('[App] AI Response:', finalContent.substring(0, 500))
+
+        // Parse tool calls WITHOUT setting state first
+        const { hasToolCall, cleanContent, toolName, toolArgs, toolExplanation } =
+          parseToolCall(finalContent)
+
+        if (hasToolCall && toolName && toolArgs) {
+          // Tool detected - check if it's in the always-approve list BEFORE showing card
+          setStreamingContent(cleanContent)
+
+          try {
+            const config = await window.api.mcp.getConfig()
+            const alwaysApproveTools = config.alwaysApproveTools || []
+
+            if (alwaysApproveTools.includes(toolName)) {
+              // Auto-approve: execute directly without showing card
+              console.log(`[App] Auto-approving always-approved tool: ${toolName}`)
+
+              // Save the AI message with the tool request
+              const aiMsg = await window.api.addMessage(
+                activeId!,
+                'assistant',
+                finalContent,
+                parentId
+              )
+              setAllMessages((prev) => [...prev, aiMsg])
+
+              // Execute tool directly
+              const toolResultContext = await executeToolDirectly(
+                toolName,
+                toolArgs,
+                toolExplanation
+              )
+
+              // Build continuation context with tool result
+              const continueContext = [
+                ...pendingContextRef.current,
+                { role: 'assistant', content: finalContent },
+                {
+                  role: 'user',
+                  content: `Tool execution result:\n\n${toolResultContext}\n\nPlease continue based on this result.`
+                }
+              ]
+
+              setStreamingContent('')
+
+              // Continue the conversation
+              streamAI(continueContext, parentId)
+            } else {
+              // Not auto-approved: show the approval card
+              console.log('[App] Tool call detected, waiting for approval')
+              showToolApprovalCard(finalContent, toolName, toolArgs, toolExplanation)
+              setPending(false)
+            }
+          } catch (error) {
+            console.error('[App] Error checking auto-approval:', error)
+            // On error, show the approval card as fallback
             showToolApprovalCard(finalContent, toolName, toolArgs, toolExplanation)
             setPending(false)
           }
-        } catch (error) {
-          console.error('[App] Error checking auto-approval:', error)
-          // On error, show the approval card as fallback
-          showToolApprovalCard(finalContent, toolName, toolArgs, toolExplanation)
+        } else {
+          // Normal message, save it
+          console.log('[App] No tool call detected')
+          const aiMsg = await window.api.addMessage(activeId!, 'assistant', finalContent, parentId)
+          setAllMessages((prev) => [...prev, aiMsg])
+          setStreamingContent('')
           setPending(false)
         }
-      } else {
-        // Normal message, save it
-        console.log('[App] No tool call detected')
-        const aiMsg = await window.api.addMessage(activeId!, 'assistant', finalContent, parentId)
-        setAllMessages((prev) => [...prev, aiMsg])
-        setStreamingContent('')
+      })
+
+      window.api.onError((err) => {
+        console.error(err)
+        cleanup()
         setPending(false)
-      }
-    })
 
-    window.api.onError((err) => {
-      console.error(err)
-      cleanup()
-      setPending(false)
+        // Parse error for user-friendly message
+        const parsedError = parseAIError(err, selectedModel)
 
-      const errorMsg = {
-        id: 'error-' + Date.now(),
-        conversation_id: activeId!,
-        role: 'assistant' as const,
-        content: `⚠️ **Error**: ${err}. Please check your API Key quota.`,
-        parent_message_id: parentId,
-        created_at: new Date().toISOString()
-      }
-      setAllMessages((prev) => [...prev, errorMsg])
-    })
+        const errorMsg = {
+          id: 'error-' + Date.now(),
+          conversation_id: activeId!,
+          role: 'assistant' as const,
+          content: parsedError.userMessage,
+          parent_message_id: parentId,
+          created_at: new Date().toISOString()
+        }
+        setAllMessages((prev) => [...prev, errorMsg])
+      })
 
-    window.api.askAI(apiKey, context, selectedModel)
-  }, [activeId, apiKey, selectedModel, parseToolCall, showToolApprovalCard, executeToolDirectly])
-
+      window.api.askAI(apiKey, context, selectedModel)
+    },
+    [activeId, apiKey, selectedModel, parseToolCall, showToolApprovalCard, executeToolDirectly]
+  )
 
   // Handle sending a message
   const handleSendMessage = async (content: string) => {
@@ -426,12 +453,12 @@ function AppContent({ apiKey }: { apiKey: string }) {
 
     // Build Context with MCP tool instructions and persona (Phase 5)
     let basePrompt = 'You are ArborChat, an intelligent assistant.'
-    
+
     // Prepend persona content if active (Phase 5)
     if (activePersonaContent) {
       basePrompt = `${activePersonaContent}\n\n---\n\n${basePrompt}`
     }
-    
+
     const system: { role: 'system'; content: string } = {
       role: 'system',
       content: buildSystemPrompt(basePrompt)
@@ -460,38 +487,39 @@ function AppContent({ apiKey }: { apiKey: string }) {
     streamAI(context, parentId)
   }
 
-
   // Handle tool approval - execute and continue conversation
   const onToolApprove = async (id: string, modifiedArgs?: Record<string, unknown>) => {
     if (!activeId || !pendingToolCall) return
 
     const parentId = pendingParentIdRef.current
-    
+
     try {
       // Save the AI message with the tool request (cleaned content)
       const aiMsg = await window.api.addMessage(
-        activeId, 
-        'assistant', 
+        activeId,
+        'assistant',
         pendingToolCall.originalContent,
         parentId
       )
       setAllMessages((prev) => [...prev, aiMsg])
-      
+
       // Execute tool and get result
       const toolResultContext = await handleToolApprove(id, modifiedArgs)
-      
+
       // Build continuation context with tool result (system prompt is in pendingContextRef)
       const continueContext = [
         ...pendingContextRef.current,
         { role: 'assistant', content: pendingToolCall.originalContent },
-        { role: 'user', content: `Tool execution result:\n\n${toolResultContext}\n\nPlease continue based on this result.` }
+        {
+          role: 'user',
+          content: `Tool execution result:\n\n${toolResultContext}\n\nPlease continue based on this result.`
+        }
       ]
 
       setStreamingContent('')
-      
+
       // Continue the conversation
       streamAI(continueContext, parentId)
-      
     } catch (error) {
       console.error('[App] Tool execution failed:', error)
       setStreamingContent('')
@@ -501,10 +529,10 @@ function AppContent({ apiKey }: { apiKey: string }) {
   // Handle tool rejection
   const onToolReject = (id: string) => {
     if (!pendingToolCall) return
-    
+
     handleToolReject(id)
     setStreamingContent('')
-    
+
     // Optionally show a message that the tool was rejected
     const rejectMsg = {
       id: 'reject-' + Date.now(),
@@ -518,21 +546,25 @@ function AppContent({ apiKey }: { apiKey: string }) {
   }
 
   // Handle tool always approve - add to always-approve list and execute
-  const onToolAlwaysApprove = async (id: string, toolName: string, modifiedArgs?: Record<string, unknown>) => {
+  const onToolAlwaysApprove = async (
+    id: string,
+    toolName: string,
+    modifiedArgs?: Record<string, unknown>
+  ) => {
     if (!activeId || !pendingToolCall) return
 
     try {
       // Get current config and add tool to always-approve list
       const currentConfig = await window.api.mcp.getConfig()
       const alwaysApproveTools = currentConfig.alwaysApproveTools || []
-      
+
       if (!alwaysApproveTools.includes(toolName)) {
         await window.api.mcp.updateConfig({
           alwaysApproveTools: [...alwaysApproveTools, toolName]
         })
         console.log(`[App] Added ${toolName} to always-approve list`)
       }
-      
+
       // Then proceed with regular approval
       await onToolApprove(id, modifiedArgs)
     } catch (error) {
@@ -541,7 +573,6 @@ function AppContent({ apiKey }: { apiKey: string }) {
       await onToolApprove(id, modifiedArgs)
     }
   }
-
 
   return (
     <>
@@ -652,7 +683,6 @@ function AppContent({ apiKey }: { apiKey: string }) {
     </>
   )
 }
-
 
 function App() {
   const [apiKey, setApiKey] = useState<string | null>(null)

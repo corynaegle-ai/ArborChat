@@ -7,6 +7,9 @@ import { MCPConfig } from './types'
 import { DESKTOP_COMMANDER_CONFIG } from './servers/desktop-commander'
 import { GITHUB_MCP_CONFIG } from './servers/github'
 import { SSH_MCP_CONFIG } from './servers/ssh-mcp'
+import { FILESYSTEM_MCP_CONFIG } from './servers/filesystem'
+import { BRAVE_SEARCH_MCP_CONFIG } from './servers/brave-search'
+import { MEMORY_MCP_CONFIG } from './servers/memory'
 
 const CONFIG_FILE = 'mcp-config.json'
 
@@ -16,16 +19,23 @@ const CONFIG_FILE = 'mcp-config.json'
 export const DEFAULT_MCP_CONFIG: MCPConfig = {
   enabled: true,
   autoApprove: {
-    safe: true,      // Auto-approve read-only operations
-    moderate: false  // Require approval for write operations
+    safe: true, // Auto-approve read-only operations
+    moderate: false // Require approval for write operations
   },
-  alwaysApproveTools: [],  // Tools that are always auto-approved regardless of risk level
+  alwaysApproveTools: [], // Tools that are always auto-approved regardless of risk level
   allowedDirectories: [
     // Will be populated with user's home directory at runtime
   ],
   blockedTools: [],
   timeout: 300000, // 5 minutes
-  servers: [DESKTOP_COMMANDER_CONFIG, GITHUB_MCP_CONFIG, SSH_MCP_CONFIG]
+  servers: [
+    DESKTOP_COMMANDER_CONFIG,
+    GITHUB_MCP_CONFIG,
+    SSH_MCP_CONFIG,
+    FILESYSTEM_MCP_CONFIG,
+    BRAVE_SEARCH_MCP_CONFIG,
+    MEMORY_MCP_CONFIG
+  ]
 }
 
 /**
@@ -46,6 +56,17 @@ export function loadMCPConfig(): MCPConfig {
       const data = fs.readFileSync(configPath, 'utf-8')
       const loaded = JSON.parse(data) as Partial<MCPConfig>
 
+      // Merge servers: keep loaded server configs but add any new default servers
+      // that don't exist in the loaded config (e.g., when new servers are added)
+      const mergedServers = loaded.servers || []
+      for (const defaultServer of DEFAULT_MCP_CONFIG.servers) {
+        const existsInLoaded = mergedServers.some((s) => s.name === defaultServer.name)
+        if (!existsInLoaded) {
+          console.log(`[MCP Config] Adding new default server: ${defaultServer.name}`)
+          mergedServers.push(defaultServer)
+        }
+      }
+
       // Merge with defaults to ensure all fields exist
       return {
         ...DEFAULT_MCP_CONFIG,
@@ -55,7 +76,7 @@ export function loadMCPConfig(): MCPConfig {
           ...loaded.autoApprove
         },
         alwaysApproveTools: loaded.alwaysApproveTools || DEFAULT_MCP_CONFIG.alwaysApproveTools,
-        servers: loaded.servers || DEFAULT_MCP_CONFIG.servers
+        servers: mergedServers
       }
     }
   } catch (error) {
@@ -149,7 +170,7 @@ export function addAlwaysApproveTool(toolName: string): MCPConfig {
  */
 export function removeAlwaysApproveTool(toolName: string): MCPConfig {
   const config = loadMCPConfig()
-  config.alwaysApproveTools = config.alwaysApproveTools.filter(t => t !== toolName)
+  config.alwaysApproveTools = config.alwaysApproveTools.filter((t) => t !== toolName)
   saveMCPConfig(config)
   return config
 }

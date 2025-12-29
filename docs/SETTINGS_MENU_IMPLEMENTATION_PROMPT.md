@@ -9,11 +9,13 @@
 You are implementing a Settings Menu redesign for **ArborChat**, an Electron-based AI chat application.
 
 ### Project Location
+
 ```
 /Users/cory.naegle/ArborChat
 ```
 
 ### Tech Stack
+
 - **Framework:** Electron with electron-vite
 - **Frontend:** React 18 + TypeScript
 - **Styling:** Tailwind CSS (custom dark theme)
@@ -21,6 +23,7 @@ You are implementing a Settings Menu redesign for **ArborChat**, an Electron-bas
 - **IPC:** Electron preload bridge pattern
 
 ### Design Document
+
 Full design specs are at: `/Users/cory.naegle/ArborChat/docs/SETTINGS_MENU_DESIGN.md`
 
 ---
@@ -173,8 +176,12 @@ Add to `src/renderer/src/assets/main.css`:
 }
 
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .animate-slide-in-right {
@@ -208,11 +215,11 @@ interface ToggleSwitchProps {
   size?: 'sm' | 'md'
 }
 
-export function ToggleSwitch({ 
-  checked, 
-  onChange, 
+export function ToggleSwitch({
+  checked,
+  onChange,
   disabled = false,
-  size = 'md' 
+  size = 'md'
 }: ToggleSwitchProps) {
   const sizes = {
     sm: { track: 'h-5 w-9', thumb: 'h-3 w-3', translate: 'translate-x-5' },
@@ -229,20 +236,20 @@ export function ToggleSwitch({
       onClick={() => !disabled && onChange(!checked)}
       disabled={disabled}
       className={cn(
-        "relative inline-flex items-center rounded-full",
-        "transition-colors duration-200 ease-in-out",
-        "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background",
+        'relative inline-flex items-center rounded-full',
+        'transition-colors duration-200 ease-in-out',
+        'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background',
         s.track,
-        checked ? "bg-primary" : "bg-secondary",
-        disabled && "opacity-50 cursor-not-allowed"
+        checked ? 'bg-primary' : 'bg-secondary',
+        disabled && 'opacity-50 cursor-not-allowed'
       )}
     >
       <span
         className={cn(
-          "inline-block rounded-full bg-white shadow-lg",
-          "transform transition-transform duration-200 ease-in-out",
+          'inline-block rounded-full bg-white shadow-lg',
+          'transform transition-transform duration-200 ease-in-out',
           s.thumb,
-          checked ? s.translate : "translate-x-1"
+          checked ? s.translate : 'translate-x-1'
         )}
       />
     </button>
@@ -286,8 +293,8 @@ const MENU_ITEMS = [
   }
 ]
 
-export function SettingsPanel({ 
-  isOpen, 
+export function SettingsPanel({
+  isOpen,
   onClose,
   selectedModel,
   onModelChange
@@ -302,7 +309,7 @@ export function SettingsPanel({
         handleClose()
       }
     }
-    
+
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isOpen])
@@ -318,37 +325,34 @@ export function SettingsPanel({
   if (!isOpen && !isClosing) return null
 
   return (
-    <div 
-      className="fixed inset-0 z-50 flex"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Settings"
-    >
+    <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true" aria-label="Settings">
       {/* Backdrop */}
-      <div 
+      <div
         className={cn(
-          "absolute inset-0 bg-black/50 backdrop-blur-sm",
-          isClosing ? "animate-fade-out" : "animate-fade-in"
+          'absolute inset-0 bg-black/50 backdrop-blur-sm',
+          isClosing ? 'animate-fade-out' : 'animate-fade-in'
         )}
         onClick={handleClose}
       />
 
       {/* Panel */}
-      <div className={cn(
-        "relative ml-auto h-full w-full max-w-3xl",
-        "bg-background border-l border-secondary",
-        "shadow-2xl shadow-black/50",
-        isClosing ? "animate-slide-out-right" : "animate-slide-in-right"
-      )}>
+      <div
+        className={cn(
+          'relative ml-auto h-full w-full max-w-3xl',
+          'bg-background border-l border-secondary',
+          'shadow-2xl shadow-black/50',
+          isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'
+        )}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-secondary">
           <h1 className="text-xl font-bold text-white">Settings</h1>
           <button
             onClick={handleClose}
             className={cn(
-              "p-2 rounded-lg",
-              "text-text-muted hover:text-white hover:bg-secondary",
-              "transition-colors"
+              'p-2 rounded-lg',
+              'text-text-muted hover:text-white hover:bg-secondary',
+              'transition-colors'
             )}
             aria-label="Close settings"
           >
@@ -366,11 +370,11 @@ export function SettingsPanel({
                   <button
                     onClick={() => setActiveSection(item.id)}
                     className={cn(
-                      "w-full flex items-center gap-3 p-3 rounded-lg",
-                      "text-left transition-all duration-150",
+                      'w-full flex items-center gap-3 p-3 rounded-lg',
+                      'text-left transition-all duration-150',
                       activeSection === item.id
-                        ? "bg-secondary text-white"
-                        : "text-text-muted hover:text-text-normal hover:bg-secondary/40"
+                        ? 'bg-secondary text-white'
+                        : 'text-text-muted hover:text-text-normal hover:bg-secondary/40'
                     )}
                   >
                     <item.icon size={18} />
@@ -387,10 +391,7 @@ export function SettingsPanel({
           {/* Content */}
           <main className="flex-1 overflow-y-auto p-6">
             {activeSection === 'api-keys' && (
-              <APIKeysSection 
-                selectedModel={selectedModel}
-                onModelChange={onModelChange}
-              />
+              <APIKeysSection selectedModel={selectedModel} onModelChange={onModelChange} />
             )}
             {activeSection === 'tools' && <ToolsSection />}
           </main>
@@ -459,16 +460,14 @@ export function APIKeysSection({ selectedModel, onModelChange }: APIKeysSectionP
     // Check which providers have keys configured
     window.api.getApiKey().then((key) => {
       if (key) {
-        setProviders(prev => prev.map(p => 
-          p.id === 'gemini' ? { ...p, hasKey: true } : p
-        ))
+        setProviders((prev) => prev.map((p) => (p.id === 'gemini' ? { ...p, hasKey: true } : p)))
       }
     })
   }, [])
 
   const handleSaveKey = async (providerId: string) => {
     if (!keyInput.trim()) return
-    
+
     setLoading(true)
     setError(null)
 
@@ -476,10 +475,8 @@ export function APIKeysSection({ selectedModel, onModelChange }: APIKeysSectionP
       if (providerId === 'gemini') {
         await window.api.saveApiKey(keyInput.trim())
       }
-      
-      setProviders(prev => prev.map(p => 
-        p.id === providerId ? { ...p, hasKey: true } : p
-      ))
+
+      setProviders((prev) => prev.map((p) => (p.id === providerId ? { ...p, hasKey: true } : p)))
       setKeyInput('')
       setExpandedProvider(null)
     } catch (err) {
@@ -492,9 +489,7 @@ export function APIKeysSection({ selectedModel, onModelChange }: APIKeysSectionP
   const handleRemoveKey = async (providerId: string) => {
     // For now, just update UI state
     // TODO: Implement actual key removal in backend
-    setProviders(prev => prev.map(p => 
-      p.id === providerId ? { ...p, hasKey: false } : p
-    ))
+    setProviders((prev) => prev.map((p) => (p.id === providerId ? { ...p, hasKey: false } : p)))
   }
 
   const handleModelChange = async (modelId: string) => {
@@ -518,26 +513,21 @@ export function APIKeysSection({ selectedModel, onModelChange }: APIKeysSectionP
           <h3 className="font-medium text-white">Active Model</h3>
           <p className="text-xs text-text-muted">Choose which model to use for chat</p>
         </div>
-        <ModelSelector 
-          selectedModel={selectedModel} 
-          onModelChange={handleModelChange} 
-        />
+        <ModelSelector selectedModel={selectedModel} onModelChange={handleModelChange} />
       </div>
 
       {/* Provider List */}
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-text-muted uppercase tracking-wider">
-          Providers
-        </h3>
-        
+        <h3 className="text-sm font-medium text-text-muted uppercase tracking-wider">Providers</h3>
+
         {providers.map((provider) => (
           <div
             key={provider.id}
             className={cn(
-              "rounded-xl border transition-all",
+              'rounded-xl border transition-all',
               provider.hasKey
-                ? "bg-green-500/5 border-green-500/20"
-                : "bg-secondary/30 border-secondary/50"
+                ? 'bg-green-500/5 border-green-500/20'
+                : 'bg-secondary/30 border-secondary/50'
             )}
           >
             {/* Provider Header */}
@@ -569,9 +559,9 @@ export function APIKeysSection({ selectedModel, onModelChange }: APIKeysSectionP
                   {provider.hasKey ? (
                     <>
                       <button
-                        onClick={() => setExpandedProvider(
-                          expandedProvider === provider.id ? null : provider.id
-                        )}
+                        onClick={() =>
+                          setExpandedProvider(expandedProvider === provider.id ? null : provider.id)
+                        }
                         className="p-2 text-text-muted hover:text-white hover:bg-secondary rounded-lg transition-colors"
                         title="Update key"
                       >
@@ -585,20 +575,22 @@ export function APIKeysSection({ selectedModel, onModelChange }: APIKeysSectionP
                         <Trash2 size={16} />
                       </button>
                     </>
-                  ) : !provider.isLocal && (
-                    <button
-                      onClick={() => setExpandedProvider(
-                        expandedProvider === provider.id ? null : provider.id
-                      )}
-                      className={cn(
-                        "flex items-center gap-2 px-3 py-1.5 rounded-lg",
-                        "bg-primary hover:bg-primary/90 text-white text-sm font-medium",
-                        "transition-colors"
-                      )}
-                    >
-                      <Plus size={14} />
-                      Add Key
-                    </button>
+                  ) : (
+                    !provider.isLocal && (
+                      <button
+                        onClick={() =>
+                          setExpandedProvider(expandedProvider === provider.id ? null : provider.id)
+                        }
+                        className={cn(
+                          'flex items-center gap-2 px-3 py-1.5 rounded-lg',
+                          'bg-primary hover:bg-primary/90 text-white text-sm font-medium',
+                          'transition-colors'
+                        )}
+                      >
+                        <Plus size={14} />
+                        Add Key
+                      </button>
+                    )
                   )}
                 </div>
               </div>
@@ -608,10 +600,8 @@ export function APIKeysSection({ selectedModel, onModelChange }: APIKeysSectionP
             {expandedProvider === provider.id && !provider.isLocal && (
               <div className="px-4 pb-4 pt-0 border-t border-secondary/50 mt-0">
                 <div className="pt-4 space-y-3">
-                  {error && (
-                    <p className="text-sm text-red-400">{error}</p>
-                  )}
-                  
+                  {error && <p className="text-sm text-red-400">{error}</p>}
+
                   <div className="flex gap-2">
                     <input
                       type="password"
@@ -619,10 +609,10 @@ export function APIKeysSection({ selectedModel, onModelChange }: APIKeysSectionP
                       onChange={(e) => setKeyInput(e.target.value)}
                       placeholder={provider.placeholder || 'Enter API key'}
                       className={cn(
-                        "flex-1 px-3 py-2 rounded-lg",
-                        "bg-tertiary border border-gray-700",
-                        "text-white placeholder-text-muted/50",
-                        "focus:outline-none focus:ring-2 focus:ring-primary"
+                        'flex-1 px-3 py-2 rounded-lg',
+                        'bg-tertiary border border-gray-700',
+                        'text-white placeholder-text-muted/50',
+                        'focus:outline-none focus:ring-2 focus:ring-primary'
                       )}
                       autoFocus
                     />
@@ -630,10 +620,10 @@ export function APIKeysSection({ selectedModel, onModelChange }: APIKeysSectionP
                       onClick={() => handleSaveKey(provider.id)}
                       disabled={!keyInput.trim() || loading}
                       className={cn(
-                        "px-4 py-2 rounded-lg font-medium",
-                        "bg-primary hover:bg-primary/90 text-white",
-                        "disabled:opacity-50 disabled:cursor-not-allowed",
-                        "transition-colors"
+                        'px-4 py-2 rounded-lg font-medium',
+                        'bg-primary hover:bg-primary/90 text-white',
+                        'disabled:opacity-50 disabled:cursor-not-allowed',
+                        'transition-colors'
                       )}
                     >
                       {loading ? 'Saving...' : 'Save'}
@@ -649,7 +639,7 @@ export function APIKeysSection({ selectedModel, onModelChange }: APIKeysSectionP
                       Cancel
                     </button>
                   </div>
-                  
+
                   {provider.helpUrl && (
                     <p className="text-xs text-text-muted">
                       Get your API key from{' '}
@@ -683,14 +673,7 @@ Create `src/renderer/src/components/settings/sections/ToolsSection.tsx`:
 
 ```tsx
 import { useState, useEffect } from 'react'
-import { 
-  Github, 
-  Terminal, 
-  Settings, 
-  Check, 
-  AlertCircle,
-  RefreshCw
-} from 'lucide-react'
+import { Github, Terminal, Settings, Check, AlertCircle, RefreshCw } from 'lucide-react'
 import { cn } from '../../../lib/utils'
 import { ToggleSwitch } from '../shared/ToggleSwitch'
 import { GitHubConfigModal } from '../modals/GitHubConfigModal'
@@ -736,7 +719,8 @@ export function ToolsSection() {
           displayName: 'Desktop Commander',
           description: 'File system access, terminal commands, process management',
           icon: Terminal,
-          enabled: status.config.servers.find(s => s.name === 'desktop-commander')?.enabled ?? false,
+          enabled:
+            status.config.servers.find((s) => s.name === 'desktop-commander')?.enabled ?? false,
           connected: status.connectionStatus['desktop-commander'] ?? false,
           requiresConfig: false,
           configured: true,
@@ -748,7 +732,7 @@ export function ToolsSection() {
           displayName: 'GitHub',
           description: 'Repository management, issues, pull requests, code search',
           icon: Github,
-          enabled: status.config.servers.find(s => s.name === 'github')?.enabled ?? false,
+          enabled: status.config.servers.find((s) => s.name === 'github')?.enabled ?? false,
           connected: githubStatus.isConnected,
           requiresConfig: true,
           configured: githubStatus.isConfigured,
@@ -765,8 +749,8 @@ export function ToolsSection() {
   }
 
   const handleToggleServer = async (serverId: string, enabled: boolean) => {
-    const server = servers.find(s => s.id === serverId)
-    
+    const server = servers.find((s) => s.id === serverId)
+
     // If enabling a server that requires config but isn't configured
     if (enabled && server?.requiresConfig && !server.configured) {
       setConfigModal(serverId)
@@ -775,11 +759,11 @@ export function ToolsSection() {
 
     try {
       const config = await window.api.mcp.getConfig()
-      const updatedServers = config.servers.map(s => 
+      const updatedServers = config.servers.map((s) =>
         s.name === serverId ? { ...s, enabled } : s
       )
       await window.api.mcp.updateConfig({ servers: updatedServers })
-      
+
       if (enabled) {
         setReconnecting(serverId)
         await window.api.mcp.reconnect()
@@ -835,10 +819,7 @@ export function ToolsSection() {
           <h3 className="font-medium text-white">MCP Tools Enabled</h3>
           <p className="text-xs text-text-muted">Master switch for all tool integrations</p>
         </div>
-        <ToggleSwitch
-          checked={mcpEnabled}
-          onChange={handleToggleMCP}
-        />
+        <ToggleSwitch checked={mcpEnabled} onChange={handleToggleMCP} />
       </div>
 
       {/* Server List */}
@@ -851,25 +832,27 @@ export function ToolsSection() {
           <div
             key={server.id}
             className={cn(
-              "p-4 rounded-xl border transition-all",
+              'p-4 rounded-xl border transition-all',
               !mcpEnabled
-                ? "bg-secondary/20 border-secondary/30 opacity-60"
+                ? 'bg-secondary/20 border-secondary/30 opacity-60'
                 : server.enabled && server.connected
-                ? "bg-green-500/5 border-green-500/20"
-                : server.enabled && !server.connected
-                ? "bg-yellow-500/5 border-yellow-500/20"
-                : "bg-secondary/30 border-secondary/50"
+                  ? 'bg-green-500/5 border-green-500/20'
+                  : server.enabled && !server.connected
+                    ? 'bg-yellow-500/5 border-yellow-500/20'
+                    : 'bg-secondary/30 border-secondary/50'
             )}
           >
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-3">
                 {/* Icon */}
-                <div className={cn(
-                  "p-2 rounded-lg",
-                  server.enabled && mcpEnabled
-                    ? "bg-primary/20 text-primary" 
-                    : "bg-secondary text-text-muted"
-                )}>
+                <div
+                  className={cn(
+                    'p-2 rounded-lg',
+                    server.enabled && mcpEnabled
+                      ? 'bg-primary/20 text-primary'
+                      : 'bg-secondary text-text-muted'
+                  )}
+                >
                   <server.icon size={20} />
                 </div>
 
@@ -877,7 +860,7 @@ export function ToolsSection() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h4 className="font-medium text-white">{server.displayName}</h4>
-                    
+
                     {/* Status Badges */}
                     {mcpEnabled && server.enabled && server.connected && (
                       <span className="flex items-center gap-1 text-xs text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full">
@@ -914,12 +897,12 @@ export function ToolsSection() {
                     onClick={() => setConfigModal(server.id)}
                     disabled={!mcpEnabled}
                     className={cn(
-                      "p-2 rounded-lg transition-colors",
+                      'p-2 rounded-lg transition-colors',
                       !mcpEnabled
-                        ? "text-text-muted/50 cursor-not-allowed"
+                        ? 'text-text-muted/50 cursor-not-allowed'
                         : server.configured
-                        ? "text-text-muted hover:text-white hover:bg-secondary"
-                        : "text-orange-400 hover:text-orange-300 hover:bg-orange-400/10"
+                          ? 'text-text-muted hover:text-white hover:bg-secondary'
+                          : 'text-orange-400 hover:text-orange-300 hover:bg-orange-400/10'
                     )}
                     title={server.configured ? 'Edit configuration' : 'Setup required'}
                   >
@@ -948,10 +931,7 @@ export function ToolsSection() {
 
       {/* Modals */}
       {configModal === 'github' && (
-        <GitHubConfigModal
-          onClose={() => setConfigModal(null)}
-          onSave={handleConfigSave}
-        />
+        <GitHubConfigModal onClose={() => setConfigModal(null)} onSave={handleConfigSave} />
       )}
     </div>
   )
@@ -964,12 +944,12 @@ Create `src/renderer/src/components/settings/modals/GitHubConfigModal.tsx`:
 
 ```tsx
 import { useState, useEffect } from 'react'
-import { 
-  X, 
-  Github, 
-  Key, 
-  ExternalLink, 
-  Check, 
+import {
+  X,
+  Github,
+  Key,
+  ExternalLink,
+  Check,
   AlertCircle,
   Trash2,
   RefreshCw,
@@ -1036,7 +1016,7 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
 
     try {
       const result = await window.api.mcp.github.configure(token.trim())
-      
+
       if (result.success) {
         setSuccess(true)
         setCurrentAccount({
@@ -1044,7 +1024,7 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
         })
         setToken('')
         setShowTokenInput(false)
-        
+
         setTimeout(() => {
           onSave()
         }, 1000)
@@ -1070,20 +1050,17 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
   }
 
   return (
-    <div 
-      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={onClose}>
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" />
 
       {/* Modal */}
-      <div 
+      <div
         className={cn(
-          "relative w-full max-w-lg",
-          "bg-background rounded-xl border border-secondary",
-          "shadow-2xl shadow-black/50",
-          "animate-scale-in"
+          'relative w-full max-w-lg',
+          'bg-background rounded-xl border border-secondary',
+          'shadow-2xl shadow-black/50',
+          'animate-scale-in'
         )}
         onClick={(e) => e.stopPropagation()}
       >
@@ -1121,9 +1098,7 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
               {success && (
                 <div className="flex items-center gap-3 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
                   <Check className="text-green-400" size={18} />
-                  <span className="text-sm text-green-400">
-                    GitHub connected successfully!
-                  </span>
+                  <span className="text-sm text-green-400">GitHub connected successfully!</span>
                 </div>
               )}
 
@@ -1145,26 +1120,22 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-white">
-                            @{currentAccount.username}
-                          </span>
+                          <span className="font-medium text-white">@{currentAccount.username}</span>
                           <span className="flex items-center gap-1 text-xs text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full">
                             <Check size={10} />
                             Connected
                           </span>
                         </div>
-                        <p className="text-xs text-text-muted">
-                          Personal Access Token configured
-                        </p>
+                        <p className="text-xs text-text-muted">Personal Access Token configured</p>
                       </div>
                     </div>
 
                     <button
                       onClick={handleDisconnect}
                       className={cn(
-                        "flex items-center gap-2 px-3 py-1.5 rounded-lg",
-                        "text-red-400 hover:text-red-300 hover:bg-red-400/10",
-                        "text-sm transition-colors"
+                        'flex items-center gap-2 px-3 py-1.5 rounded-lg',
+                        'text-red-400 hover:text-red-300 hover:bg-red-400/10',
+                        'text-sm transition-colors'
                       )}
                     >
                       <Trash2 size={14} />
@@ -1186,17 +1157,28 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
 
                   {/* Instructions */}
                   <div className="p-3 bg-tertiary/50 rounded-lg border border-tertiary text-sm space-y-2">
-                    <p className="text-text-muted">Create a Personal Access Token with these scopes:</p>
+                    <p className="text-text-muted">
+                      Create a Personal Access Token with these scopes:
+                    </p>
                     <ul className="list-disc list-inside text-text-muted space-y-1 ml-2">
-                      <li><code className="text-primary/80">repo</code> - Full repository access</li>
-                      <li><code className="text-primary/80">read:org</code> - Read organization data</li>
-                      <li><code className="text-primary/80">read:user</code> - Read user profile</li>
+                      <li>
+                        <code className="text-primary/80">repo</code> - Full repository access
+                      </li>
+                      <li>
+                        <code className="text-primary/80">read:org</code> - Read organization data
+                      </li>
+                      <li>
+                        <code className="text-primary/80">read:user</code> - Read user profile
+                      </li>
                     </ul>
                     <a
                       href="#"
                       onClick={(e) => {
                         e.preventDefault()
-                        window.open('https://github.com/settings/tokens/new?scopes=repo,read:org,read:user&description=ArborChat', '_blank')
+                        window.open(
+                          'https://github.com/settings/tokens/new?scopes=repo,read:org,read:user&description=ArborChat',
+                          '_blank'
+                        )
                       }}
                       className="flex items-center gap-1 text-primary hover:underline mt-2"
                     >
@@ -1216,10 +1198,10 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
                       onChange={(e) => setToken(e.target.value)}
                       placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
                       className={cn(
-                        "w-full px-3 py-2.5 rounded-lg",
-                        "bg-tertiary border border-gray-700",
-                        "text-white placeholder-text-muted/50 font-mono text-sm",
-                        "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                        'w-full px-3 py-2.5 rounded-lg',
+                        'bg-tertiary border border-gray-700',
+                        'text-white placeholder-text-muted/50 font-mono text-sm',
+                        'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent'
                       )}
                       autoFocus
                       onKeyDown={(e) => {
@@ -1237,10 +1219,10 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
                 <button
                   onClick={() => setShowTokenInput(true)}
                   className={cn(
-                    "w-full flex items-center justify-center gap-2 p-3 rounded-lg",
-                    "border border-dashed border-secondary hover:border-primary/50",
-                    "text-text-muted hover:text-white",
-                    "transition-colors"
+                    'w-full flex items-center justify-center gap-2 p-3 rounded-lg',
+                    'border border-dashed border-secondary hover:border-primary/50',
+                    'text-text-muted hover:text-white',
+                    'transition-colors'
                   )}
                 >
                   <RefreshCw size={16} />
@@ -1264,10 +1246,10 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
               onClick={handleSaveToken}
               disabled={!token.trim() || loading}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-lg font-medium",
-                "bg-primary hover:bg-primary/90 text-white",
-                "disabled:opacity-50 disabled:cursor-not-allowed",
-                "transition-colors"
+                'flex items-center gap-2 px-4 py-2 rounded-lg font-medium',
+                'bg-primary hover:bg-primary/90 text-white',
+                'disabled:opacity-50 disabled:cursor-not-allowed',
+                'transition-colors'
               )}
             >
               {loading ? (
@@ -1324,6 +1306,7 @@ Replace the `SettingsModal` in `src/renderer/src/App.tsx`:
 1. **Remove** the `SettingsModal` component definition (lines ~69-142)
 
 2. **Add import** at the top:
+
 ```tsx
 import { SettingsPanel } from './components/settings'
 ```
@@ -1332,17 +1315,19 @@ import { SettingsPanel } from './components/settings'
 
 ```tsx
 // BEFORE (remove this):
-{isSettingsOpen && (
-  <SettingsModal
-    onClose={() => setIsSettingsOpen(false)}
-    onSave={setApiKey}
-    selectedModel={selectedModel}
-    onModelChange={setSelectedModel}
-  />
-)}
+{
+  isSettingsOpen && (
+    <SettingsModal
+      onClose={() => setIsSettingsOpen(false)}
+      onSave={setApiKey}
+      selectedModel={selectedModel}
+      onModelChange={setSelectedModel}
+    />
+  )
+}
 
 // AFTER (add this):
-<SettingsPanel
+;<SettingsPanel
   isOpen={isSettingsOpen}
   onClose={() => setIsSettingsOpen(false)}
   selectedModel={selectedModel}
@@ -1357,6 +1342,7 @@ import { SettingsPanel } from './components/settings'
 After implementation, verify:
 
 ### Settings Panel
+
 - [ ] Panel slides in from right when clicking Settings in sidebar
 - [ ] Panel closes on backdrop click
 - [ ] Panel closes on Escape key
@@ -1364,6 +1350,7 @@ After implementation, verify:
 - [ ] Active menu item is highlighted
 
 ### API Keys Section
+
 - [ ] Current model is displayed
 - [ ] Model selector works
 - [ ] Gemini shows "Configured" if key exists
@@ -1373,6 +1360,7 @@ After implementation, verify:
 - [ ] Help link opens in browser
 
 ### Tools Section
+
 - [ ] Master MCP toggle works
 - [ ] Desktop Commander shows correct status
 - [ ] GitHub shows "Setup Required" if not configured
@@ -1381,6 +1369,7 @@ After implementation, verify:
 - [ ] Reconnecting state shows spinner
 
 ### GitHub Modal
+
 - [ ] Shows current account if configured
 - [ ] Shows token input if not configured
 - [ ] "Create token" link opens GitHub
@@ -1395,15 +1384,19 @@ After implementation, verify:
 ## Common Issues & Solutions
 
 ### Issue: MCP API not available
+
 **Solution:** Ensure you're testing with MCP initialized. Check that `MCPProvider` wraps the app.
 
 ### Issue: GitHub status always shows disconnected
+
 **Solution:** Verify the GitHub MCP IPC handlers are properly implemented in `src/main/mcp/ipc.ts`.
 
 ### Issue: Animations not working
+
 **Solution:** Ensure CSS animations are added to `main.css` and Tailwind is processing the file.
 
 ### Issue: Toggle doesn't persist
+
 **Solution:** Check that `updateConfig` is being called and the config file is being written.
 
 ---
@@ -1411,6 +1404,7 @@ After implementation, verify:
 ## Files Created/Modified Summary
 
 ### New Files (8)
+
 ```
 src/renderer/src/components/settings/
 ├── SettingsPanel.tsx
@@ -1428,6 +1422,7 @@ src/renderer/src/components/settings/
 ```
 
 ### Modified Files (2)
+
 ```
 src/renderer/src/App.tsx           # Replace SettingsModal with SettingsPanel
 src/renderer/src/assets/main.css   # Add animation keyframes
@@ -1435,6 +1430,6 @@ src/renderer/src/assets/main.css   # Add animation keyframes
 
 ---
 
-*Prompt Version: 1.0*
-*Created: December 2024*
-*Design Document: /Users/cory.naegle/ArborChat/docs/SETTINGS_MENU_DESIGN.md*
+_Prompt Version: 1.0_
+_Created: December 2024_
+_Design Document: /Users/cory.naegle/ArborChat/docs/SETTINGS_MENU_DESIGN.md_

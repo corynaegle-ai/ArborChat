@@ -35,20 +35,6 @@ const GEMINI_MODELS: AIModel[] = [
     description: 'Advanced reasoning',
     provider: 'gemini',
     isLocal: false
-  },
-  {
-    id: 'gemini-3.0-flash',
-    name: 'Gemini 3.0 Flash',
-    description: 'Next-gen speed & reasoning',
-    provider: 'gemini',
-    isLocal: false
-  },
-  {
-    id: 'gemini-3.0-pro',
-    name: 'Gemini 3.0 Pro',
-    description: 'Most capable, frontier intelligence',
-    provider: 'gemini',
-    isLocal: false
   }
 ]
 
@@ -96,7 +82,7 @@ export class GeminiProvider implements AIProvider {
     console.log('[Gemini] validateConnection called')
     try {
       const genAI = new GoogleGenerativeAI(apiKey)
-      const model = genAI.getGenerativeModel({ model: DEFAULT_MODEL }, { apiVersion: 'v1' })
+      const model = genAI.getGenerativeModel({ model: DEFAULT_MODEL }, { apiVersion: 'v1beta' })
       console.log('[Gemini] Sending test ping...')
       await model.generateContent('ping')
       console.log('[Gemini] Test ping successful!')
@@ -201,14 +187,14 @@ export class GeminiProvider implements AIProvider {
         }
         console.log('[Gemini] Stream complete. Total chunks:', chunkCount)
         console.log('[Gemini] Full response preview:', fullResponse.substring(0, 500))
-        
+
         // Check for tool_use pattern
         if (fullResponse.includes('```tool_use')) {
           console.log('[Gemini] ✅ Tool use block detected in response!')
         } else {
           console.log('[Gemini] ❌ No tool_use block in response')
         }
-        
+
         window.webContents.send('ai:done')
       } catch (streamErr) {
         // If streaming is not supported, fall back to simple generateContent

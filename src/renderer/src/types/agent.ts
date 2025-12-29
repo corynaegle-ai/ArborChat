@@ -3,21 +3,21 @@
 /**
  * Agent Status - Represents the current state of an agent
  */
-export type AgentStatus = 
-  | 'created'         // Agent initialized, awaiting first run
-  | 'running'         // Actively processing/generating
-  | 'waiting'         // Agent needs user input or tool approval
-  | 'paused'          // Agent is paused by user
-  | 'completed'       // Agent finished its task
-  | 'failed'          // Agent encountered an error
+export type AgentStatus =
+  | 'created' // Agent initialized, awaiting first run
+  | 'running' // Actively processing/generating
+  | 'waiting' // Agent needs user input or tool approval
+  | 'paused' // Agent is paused by user
+  | 'completed' // Agent finished its task
+  | 'failed' // Agent encountered an error
 
 /**
  * Agent Tool Permission - Controls auto-approval behavior
  */
-export type AgentToolPermission = 
-  | 'standard'      // Auto-approve safe, require approval for moderate+dangerous
-  | 'restricted'    // Require approval for all tool operations
-  | 'autonomous'    // Auto-approve safe+moderate, only require approval for dangerous
+export type AgentToolPermission =
+  | 'standard' // Auto-approve safe, require approval for moderate+dangerous
+  | 'restricted' // Require approval for all tool operations
+  | 'autonomous' // Auto-approve safe+moderate, only require approval for dangerous
 
 /**
  * Tool Risk Level - Categorization of tool operations
@@ -30,10 +30,10 @@ export type ToolRiskLevel = 'safe' | 'moderate' | 'dangerous'
 export interface AgentContext {
   includeCurrentMessage: boolean
   includeParentContext: boolean
-  parentContextDepth: number       // How many parent messages to include
+  parentContextDepth: number // How many parent messages to include
   includeFullConversation: boolean
   includePersona: boolean
-  seedMessages: AgentMessage[]     // Computed seed messages
+  seedMessages: AgentMessage[] // Computed seed messages
   workingDirectory: string
 }
 
@@ -86,16 +86,16 @@ export interface Agent {
   id: string
   config: AgentConfig
   status: AgentStatus
-  
+
   // Conversation history
   messages: AgentMessage[]
   steps: AgentStep[]
   systemPrompt: string
-  
+
   // Execution state
   currentStepIndex: number
-  pendingApprovals: string[]       // Step IDs waiting for approval
-  
+  pendingApprovals: string[] // Step IDs waiting for approval
+
   // Active tool call (for UI)
   pendingToolCall?: {
     id: string
@@ -105,19 +105,19 @@ export interface Agent {
     originalContent: string
     cleanContent: string
   } | null
-  
+
   // Timestamps
   createdAt: number
   startedAt?: number
   completedAt?: number
-  
+
   // Progress tracking
   stepsCompleted: number
   estimatedStepsRemaining?: number
-  
+
   // Error state
   error?: string
-  
+
   // Source reference
   sourceConversationId: string
   sourceMessageId?: string
@@ -171,7 +171,7 @@ export interface AgentSummary {
 /**
  * Agent Event Types - For real-time updates
  */
-export type AgentEventType = 
+export type AgentEventType =
   | 'status_changed'
   | 'message_added'
   | 'message_updated'
@@ -181,3 +181,56 @@ export type AgentEventType =
   | 'tool_completed'
   | 'error'
   | 'completed'
+
+/**
+ * Agent Template - Predefined configurations for common agent tasks (Phase 6)
+ */
+export interface AgentTemplate {
+  id: string
+  name: string
+  description: string
+  icon: string                       // Lucide icon name
+  category: AgentTemplateCategory
+  instructions: string               // Pre-filled instructions
+  toolPermission: AgentToolPermission
+  tags: string[]
+  isBuiltIn: boolean                 // System templates vs user-created
+  requiresDirectory?: boolean        // Whether a working directory must be selected
+}
+
+export type AgentTemplateCategory = 
+  | 'development'
+  | 'documentation'
+  | 'analysis'
+  | 'automation'
+  | 'custom'
+
+/**
+ * Agent Statistics - Tracking agent performance over time (Phase 6)
+ */
+export interface AgentStats {
+  totalAgents: number
+  completedCount: number
+  failedCount: number
+  successRate: number               // 0-100 percentage
+  avgDurationMs: number
+  avgStepsPerAgent: number
+  toolUsageByName: Record<string, number>
+}
+
+/**
+ * Agent Retry Configuration (Phase 6)
+ */
+export interface AgentRetryConfig {
+  maxRetries: number
+  initialDelayMs: number
+  maxDelayMs: number
+  backoffMultiplier: number
+}
+
+export const DEFAULT_RETRY_CONFIG: AgentRetryConfig = {
+  maxRetries: 3,
+  initialDelayMs: 1000,
+  maxDelayMs: 30000,
+  backoffMultiplier: 2
+}

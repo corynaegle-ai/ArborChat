@@ -3,7 +3,7 @@
 /**
  * Supported AI provider identifiers
  */
-export type ProviderId = 'anthropic' | 'gemini' | 'ollama' | 'openai'
+export type ProviderId = 'anthropic' | 'gemini' | 'ollama' | 'openai' | 'brave-search'
 
 /**
  * Individual provider credential

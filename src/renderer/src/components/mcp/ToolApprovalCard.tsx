@@ -100,7 +100,7 @@ export function ToolApprovalCard({
 
   const handleAlwaysApprove = () => {
     if (!onAlwaysApprove) return
-    
+
     if (isEditing) {
       try {
         const parsed = JSON.parse(editedArgs)
@@ -121,12 +121,7 @@ export function ToolApprovalCard({
   }
 
   return (
-    <div
-      className={cn(
-        'rounded-lg border-2 p-4 my-3 transition-all',
-        riskStyles[riskLevel]
-      )}
-    >
+    <div className={cn('rounded-lg border-2 p-4 my-3 transition-all', riskStyles[riskLevel])}>
       {/* Header */}
       <div className="flex items-center gap-2 mb-2">
         <Icon size={18} className="text-primary" />
@@ -137,9 +132,7 @@ export function ToolApprovalCard({
       </div>
 
       {/* Explanation */}
-      {explanation && (
-        <p className="text-sm text-text-muted mb-3">{explanation}</p>
-      )}
+      {explanation && <p className="text-sm text-text-muted mb-3">{explanation}</p>}
 
       {/* Arguments */}
       <div className="bg-tertiary rounded-md p-3 font-mono text-xs mb-3 overflow-x-auto">
@@ -154,16 +147,12 @@ export function ToolApprovalCard({
             spellCheck={false}
           />
         ) : (
-          <pre className="text-text-muted whitespace-pre-wrap">
-            {JSON.stringify(args, null, 2)}
-          </pre>
+          <pre className="text-text-muted whitespace-pre-wrap">{JSON.stringify(args, null, 2)}</pre>
         )}
       </div>
 
       {/* Parse error */}
-      {parseError && (
-        <p className="text-xs text-red-400 mb-3">{parseError}</p>
-      )}
+      {parseError && <p className="text-xs text-red-400 mb-3">{parseError}</p>}
 
       {/* Dangerous warning */}
       {riskLevel === 'dangerous' && (

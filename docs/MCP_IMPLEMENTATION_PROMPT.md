@@ -5,10 +5,12 @@
 **Project:** ArborChat - A threaded AI chat desktop application  
 **Location:** `/Users/cory.naegle/ArborChat`  
 **Repository:**
+
 - Fork: `https://github.com/corynaegle-ai/ArborChat`
 - Upstream: `https://github.com/jordannaegle/ArborChat`
 
 **Tech Stack:**
+
 - Electron 33+
 - React 19
 - TypeScript
@@ -30,6 +32,7 @@ Implement a **Native MCP (Model Context Protocol) Client** in ArborChat to enabl
 Read the full design at: `/Users/cory.naegle/ArborChat/docs/MCP_INTEGRATION_DESIGN.md`
 
 Key architecture:
+
 ```
 Renderer Process (React UI)
     ↓ IPC via contextBridge
@@ -47,17 +50,20 @@ Desktop Commander MCP Server (child process)
 ### Phase 1: MCP Client Foundation
 
 #### 1.1 Install Dependencies
+
 ```bash
 cd /Users/cory.naegle/ArborChat
 npm install @modelcontextprotocol/sdk
 ```
 
 #### 1.2 Create MCP Module Structure
+
 ```bash
 mkdir -p src/main/mcp/servers
 ```
 
 Create these files:
+
 - `src/main/mcp/manager.ts` - MCPManager class that connects to MCP servers
 - `src/main/mcp/ipc.ts` - IPC handlers for renderer ↔ main communication
 - `src/main/mcp/config.ts` - Configuration types and defaults
@@ -66,6 +72,7 @@ Create these files:
 #### 1.3 MCPManager Implementation
 
 The MCPManager should:
+
 - Connect to MCP servers via stdio transport
 - Discover available tools from connected servers
 - Route tool calls to the appropriate server
@@ -73,6 +80,7 @@ The MCPManager should:
 - Gracefully disconnect on app shutdown
 
 Key classes from `@modelcontextprotocol/sdk`:
+
 - `Client` from `@modelcontextprotocol/sdk/client/index.js`
 - `StdioClientTransport` from `@modelcontextprotocol/sdk/client/stdio.js`
 
@@ -80,31 +88,30 @@ Key classes from `@modelcontextprotocol/sdk`:
 
 #### 2.1 IPC Handlers to Create
 
-| Handler | Purpose |
-|---------|---------|
-| `mcp:init` | Initialize and connect to MCP servers |
-| `mcp:get-tools` | Return list of available tools |
+| Handler            | Purpose                                                |
+| ------------------ | ------------------------------------------------------ |
+| `mcp:init`         | Initialize and connect to MCP servers                  |
+| `mcp:get-tools`    | Return list of available tools                         |
 | `mcp:request-tool` | Request tool execution (queues for approval if needed) |
-| `mcp:approve` | User approves pending tool call |
-| `mcp:reject` | User rejects pending tool call |
-| `mcp:shutdown` | Disconnect all MCP servers |
+| `mcp:approve`      | User approves pending tool call                        |
+| `mcp:reject`       | User rejects pending tool call                         |
+| `mcp:shutdown`     | Disconnect all MCP servers                             |
 
 #### 2.2 Update Preload Script
 
 Add `mcp` namespace to `window.api` in `src/preload/index.ts`:
+
 ```typescript
 const mcpApi = {
   init: () => ipcRenderer.invoke('mcp:init'),
   getTools: () => ipcRenderer.invoke('mcp:get-tools'),
-  requestTool: (serverName, toolName, args) => 
+  requestTool: (serverName, toolName, args) =>
     ipcRenderer.invoke('mcp:request-tool', { serverName, toolName, args }),
-  approve: (id, modifiedArgs?) => 
-    ipcRenderer.invoke('mcp:approve', { id, modifiedArgs }),
+  approve: (id, modifiedArgs?) => ipcRenderer.invoke('mcp:approve', { id, modifiedArgs }),
   reject: (id) => ipcRenderer.invoke('mcp:reject', { id }),
-  onApprovalRequired: (callback) => 
+  onApprovalRequired: (callback) =>
     ipcRenderer.on('mcp:approval-required', (_, data) => callback(data)),
-  removeAllListeners: () => 
-    ipcRenderer.removeAllListeners('mcp:approval-required')
+  removeAllListeners: () => ipcRenderer.removeAllListeners('mcp:approval-required')
 }
 ```
 
@@ -115,6 +122,7 @@ Update `src/preload/index.d.ts` to include MCP API types.
 ### Phase 3: Tool Approval System
 
 Implement a pending tool call queue with:
+
 - Auto-approval for "safe" tools (read_file, list_directory, etc.)
 - UI approval required for "moderate" tools (write_file, start_process)
 - Type-to-confirm for "dangerous" tools (move_file, kill_process)
@@ -126,12 +134,14 @@ Risk levels defined in `/Users/cory.naegle/ArborChat/docs/MCP_INTEGRATION_DESIGN
 Create React components in `src/renderer/src/components/`:
 
 #### 4.1 ToolApprovalCard.tsx
+
 - Shows pending tool call with name, args, risk level
 - Approve/Edit/Reject buttons
 - JSON editor for modifying args
 - Visual risk indicators (green/yellow/red)
 
 #### 4.2 ToolResultCard.tsx
+
 - Displays tool execution results
 - Collapsible for long outputs
 - Success/error styling
@@ -140,17 +150,22 @@ Create React components in `src/renderer/src/components/`:
 ### Phase 5: AI Integration
 
 #### 5.1 Tool System Prompt
+
 Generate a system prompt that describes available tools to the AI.
 Include tool names, descriptions, and input schemas.
 
 #### 5.2 Tool Call Parser
+
 Create `src/renderer/src/lib/toolParser.ts` to:
+
 - Parse AI responses for tool request blocks
 - Extract tool name, args, and explanation
 - Strip tool blocks from displayed content
 
 #### 5.3 Message Flow Integration
+
 Update ChatWindow.tsx to:
+
 - Detect tool calls in AI responses
 - Show ToolApprovalCard for pending approvals
 - Execute approved tools via `window.api.mcp`
@@ -161,38 +176,42 @@ Update ChatWindow.tsx to:
 
 ## Key Files to Reference
 
-| File | Purpose |
-|------|---------|
-| `src/main/index.ts` | Main process entry, add MCP handler setup |
-| `src/main/ai.ts` | AI provider routing, add tool system prompts |
-| `src/preload/index.ts` | IPC bridge, add MCP API |
-| `src/preload/index.d.ts` | Type definitions |
-| `src/renderer/src/components/ChatWindow.tsx` | Main chat UI |
-| `src/renderer/src/components/MessageBubble.tsx` | Message rendering |
-| `docs/MCP_INTEGRATION_DESIGN.md` | Full design document |
-| `docs/CLI_EXECUTION_DESIGN.md` | Earlier CLI design (reference) |
+| File                                            | Purpose                                      |
+| ----------------------------------------------- | -------------------------------------------- |
+| `src/main/index.ts`                             | Main process entry, add MCP handler setup    |
+| `src/main/ai.ts`                                | AI provider routing, add tool system prompts |
+| `src/preload/index.ts`                          | IPC bridge, add MCP API                      |
+| `src/preload/index.d.ts`                        | Type definitions                             |
+| `src/renderer/src/components/ChatWindow.tsx`    | Main chat UI                                 |
+| `src/renderer/src/components/MessageBubble.tsx` | Message rendering                            |
+| `docs/MCP_INTEGRATION_DESIGN.md`                | Full design document                         |
+| `docs/CLI_EXECUTION_DESIGN.md`                  | Earlier CLI design (reference)               |
 
 ---
 
 ## Desktop Commander Tools Available
 
 **File System (read-only):**
+
 - `read_file` - Read file contents
 - `list_directory` - List directory contents
 - `get_file_info` - Get file metadata
 
 **File System (write):**
+
 - `write_file` - Write/append to files
 - `create_directory` - Create directories
 - `move_file` - Move/rename files
 - `edit_block` - Surgical text replacements
 
 **Search:**
+
 - `start_search` - Start file/content search
 - `get_more_search_results` - Paginate search results
 - `stop_search` - Cancel active search
 
 **Processes:**
+
 - `start_process` - Start terminal command
 - `read_process_output` - Read process output
 - `interact_with_process` - Send input to process
@@ -268,6 +287,7 @@ npm run lint
 ## Start Here
 
 Begin by reading the existing codebase:
+
 1. `src/main/index.ts` - Understand main process setup
 2. `src/preload/index.ts` - See existing IPC patterns
 3. `src/main/ai.ts` - Understand AI integration

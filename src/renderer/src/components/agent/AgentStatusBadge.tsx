@@ -11,13 +11,16 @@ interface AgentStatusBadgeProps {
   showLabel?: boolean
 }
 
-const statusConfig: Record<AgentStatus, {
-  label: string
-  color: string
-  bgColor: string
-  icon: React.ReactNode
-  pulse?: boolean
-}> = {
+const statusConfig: Record<
+  AgentStatus,
+  {
+    label: string
+    color: string
+    bgColor: string
+    icon: React.ReactNode
+    pulse?: boolean
+  }
+> = {
   created: {
     label: 'Ready',
     color: 'text-zinc-400',
@@ -57,11 +60,7 @@ const statusConfig: Record<AgentStatus, {
   }
 }
 
-export function AgentStatusBadge({ 
-  status, 
-  size = 'md',
-  showLabel = true 
-}: AgentStatusBadgeProps) {
+export function AgentStatusBadge({ status, size = 'md', showLabel = true }: AgentStatusBadgeProps) {
   const config = statusConfig[status]
 
   const sizeClasses = {
@@ -77,30 +76,22 @@ export function AgentStatusBadge({
   }
 
   return (
-    <div className={cn(
-      'flex items-center',
-      sizeClasses[size],
-      config.color
-    )}>
+    <div className={cn('flex items-center', sizeClasses[size], config.color)}>
       {/* Pulsing dot indicator */}
       <span className="relative flex">
         {config.pulse && (
-          <span className={cn(
-            'animate-ping absolute inline-flex rounded-full opacity-75',
-            config.bgColor,
-            dotSizes[size]
-          )} />
+          <span
+            className={cn(
+              'animate-ping absolute inline-flex rounded-full opacity-75',
+              config.bgColor,
+              dotSizes[size]
+            )}
+          />
         )}
-        <span className={cn(
-          'relative inline-flex rounded-full',
-          config.bgColor,
-          dotSizes[size]
-        )} />
+        <span className={cn('relative inline-flex rounded-full', config.bgColor, dotSizes[size])} />
       </span>
-      
-      {showLabel && (
-        <span className="font-medium">{config.label}</span>
-      )}
+
+      {showLabel && <span className="font-medium">{config.label}</span>}
     </div>
   )
 }
@@ -108,12 +99,8 @@ export function AgentStatusBadge({
 // Compact badge version for lists
 export function AgentStatusIcon({ status }: { status: AgentStatus }) {
   const config = statusConfig[status]
-  
-  return (
-    <div className={cn('flex items-center', config.color)}>
-      {config.icon}
-    </div>
-  )
+
+  return <div className={cn('flex items-center', config.color)}>{config.icon}</div>
 }
 
 export default AgentStatusBadge

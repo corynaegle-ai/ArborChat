@@ -1,9 +1,19 @@
 // src/renderer/src/components/agent/AgentLaunchModal.tsx
 
 import { useState, useRef, useEffect } from 'react'
-import { X, Bot, Rocket, Sparkles, FolderOpen, Shield, ShieldAlert, ShieldCheck } from 'lucide-react'
+import {
+  X,
+  Bot,
+  Rocket,
+  Sparkles,
+  FolderOpen,
+  Shield,
+  ShieldAlert,
+  ShieldCheck
+} from 'lucide-react'
 import { cn } from '../../lib/utils'
-import type { AgentToolPermission } from '../../types/agent'
+import type { AgentToolPermission, AgentTemplate } from '../../types/agent'
+import { AgentTemplateSelector } from './AgentTemplateSelector'
 
 interface ContextSeedingOptions {
   includeCurrentMessage: boolean
@@ -15,7 +25,7 @@ interface ContextSeedingOptions {
 
 interface AgentLaunchModalProps {
   isOpen: boolean
-  rootContext?: string  // The message that spawned this
+  rootContext?: string // The message that spawned this
   hasActivePersona?: boolean
   personaName?: string
   onLaunch: (config: {
@@ -40,7 +50,7 @@ export function AgentLaunchModal({
   const [agentName, setAgentName] = useState('')
   const [toolPermission, setToolPermission] = useState<AgentToolPermission>('standard')
   const [workingDirectory, setWorkingDirectory] = useState('')
-  
+  const [selectedTemplate, setSelectedTemplate] = useState<AgentTemplate | null>(null)
   // Context seeding options
   const [contextOptions, setContextOptions] = useState<ContextSeedingOptions>({
     includeCurrentMessage: true,
@@ -65,6 +75,8 @@ export function AgentLaunchModal({
       setInstructions('')
       setAgentName('')
       setToolPermission('standard')
+      setSelectedTemplate(null)
+      setWorkingDirectory('')
       setContextOptions({
         includeCurrentMessage: true,
         includeParentContext: true,
@@ -75,9 +87,24 @@ export function AgentLaunchModal({
     }
   }, [isOpen, hasActivePersona])
 
+  // Handle template selection
+  const handleSelectTemplate = (template: AgentTemplate | null) => {
+    setSelectedTemplate(template)
+    if (template) {
+      setInstructions(template.instructions)
+      setToolPermission(template.toolPermission)
+      setAgentName(template.name)
+    }
+  }
+
+  // Check if working directory is required but not set
+  const directoryRequired = selectedTemplate?.requiresDirectory ?? false
+  const directoryMissing = directoryRequired && !workingDirectory.trim()
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!instructions.trim()) return
+    if (directoryMissing) return
     onLaunch({
       instructions,
       name: agentName || undefined,
@@ -102,7 +129,7 @@ export function AgentLaunchModal({
     key: K,
     value: ContextSeedingOptions[K]
   ) => {
-    setContextOptions(prev => ({ ...prev, [key]: value }))
+    setContextOptions((prev) => ({ ...prev, [key]: value }))
   }
 
   if (!isOpen) return null
@@ -110,19 +137,18 @@ export function AgentLaunchModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+
       {/* Modal */}
-      <div className={cn(
-        'relative w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto',
-        'bg-gradient-to-b from-tertiary to-background',
-        'border border-violet-500/30 rounded-2xl',
-        'shadow-2xl shadow-violet-500/10',
-        'animate-in zoom-in-95 fade-in duration-200'
-      )}>
+      <div
+        className={cn(
+          'relative w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto',
+          'bg-gradient-to-b from-tertiary to-background',
+          'border border-violet-500/30 rounded-2xl',
+          'shadow-2xl shadow-violet-500/10',
+          'animate-in zoom-in-95 fade-in duration-200'
+        )}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-violet-500/20 sticky top-0 bg-tertiary/95 backdrop-blur-sm z-10">
           <div className="flex items-center gap-3">
@@ -131,7 +157,9 @@ export function AgentLaunchModal({
             </div>
             <div>
               <h2 className="text-lg font-semibold text-white">Launch Agent</h2>
-              <p className="text-xs text-text-muted">Configure and spawn an autonomous coding agent</p>
+              <p className="text-xs text-text-muted">
+                Configure and spawn an autonomous coding agent
+              </p>
             </div>
           </div>
           <button
@@ -144,6 +172,12 @@ export function AgentLaunchModal({
 
         {/* Content */}
         <form onSubmit={handleSubmit} className="p-4 space-y-5">
+          {/* Template Selector */}
+          <AgentTemplateSelector
+            selectedTemplateId={selectedTemplate?.id ?? null}
+            onSelectTemplate={handleSelectTemplate}
+          />
+
           {/* Root Context Preview */}
           {rootContext && (
             <div className="space-y-2">
@@ -236,7 +270,9 @@ export function AgentLaunchModal({
                 {contextOptions.includeParentContext && (
                   <select
                     value={contextOptions.parentContextDepth}
-                    onChange={(e) => updateContextOption('parentContextDepth', parseInt(e.target.value))}
+                    onChange={(e) =>
+                      updateContextOption('parentContextDepth', parseInt(e.target.value))
+                    }
                     className="bg-secondary/50 text-text-muted text-xs px-2 py-1 rounded border border-secondary/50 focus:outline-none focus:ring-1 focus:ring-violet-500/30"
                   >
                     <option value={1}>1 message</option>
@@ -270,7 +306,8 @@ export function AgentLaunchModal({
                     className="w-4 h-4 rounded border-secondary bg-secondary/50 text-violet-500 focus:ring-violet-500/30"
                   />
                   <span className="text-sm text-text-muted group-hover:text-text-normal transition-colors">
-                    Include active persona {personaName && <span className="text-violet-400">({personaName})</span>}
+                    Include active persona{' '}
+                    {personaName && <span className="text-violet-400">({personaName})</span>}
                   </span>
                 </label>
               )}
@@ -282,12 +319,14 @@ export function AgentLaunchModal({
             <label className="text-xs font-medium text-text-muted">Tool Permissions</label>
             <div className="space-y-2">
               {/* Standard */}
-              <label className={cn(
-                'flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all',
-                toolPermission === 'standard'
-                  ? 'border-violet-500/50 bg-violet-500/10'
-                  : 'border-secondary/50 bg-secondary/20 hover:border-secondary'
-              )}>
+              <label
+                className={cn(
+                  'flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all',
+                  toolPermission === 'standard'
+                    ? 'border-violet-500/50 bg-violet-500/10'
+                    : 'border-secondary/50 bg-secondary/20 hover:border-secondary'
+                )}
+              >
                 <input
                   type="radio"
                   name="toolPermission"
@@ -308,12 +347,14 @@ export function AgentLaunchModal({
               </label>
 
               {/* Restricted */}
-              <label className={cn(
-                'flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all',
-                toolPermission === 'restricted'
-                  ? 'border-violet-500/50 bg-violet-500/10'
-                  : 'border-secondary/50 bg-secondary/20 hover:border-secondary'
-              )}>
+              <label
+                className={cn(
+                  'flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all',
+                  toolPermission === 'restricted'
+                    ? 'border-violet-500/50 bg-violet-500/10'
+                    : 'border-secondary/50 bg-secondary/20 hover:border-secondary'
+                )}
+              >
                 <input
                   type="radio"
                   name="toolPermission"
@@ -334,12 +375,14 @@ export function AgentLaunchModal({
               </label>
 
               {/* Autonomous */}
-              <label className={cn(
-                'flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all',
-                toolPermission === 'autonomous'
-                  ? 'border-violet-500/50 bg-violet-500/10'
-                  : 'border-secondary/50 bg-secondary/20 hover:border-secondary'
-              )}>
+              <label
+                className={cn(
+                  'flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all',
+                  toolPermission === 'autonomous'
+                    ? 'border-violet-500/50 bg-violet-500/10'
+                    : 'border-secondary/50 bg-secondary/20 hover:border-secondary'
+                )}
+              >
                 <input
                   type="radio"
                   name="toolPermission"
@@ -364,8 +407,17 @@ export function AgentLaunchModal({
           {/* Working Directory */}
           <div className="space-y-2">
             <label className="text-xs font-medium text-text-muted">
-              Working Directory <span className="text-text-muted/50">(optional)</span>
+              Working Directory {directoryRequired ? (
+                <span className="text-red-400">*</span>
+              ) : (
+                <span className="text-text-muted/50">(optional)</span>
+              )}
             </label>
+            {directoryMissing && (
+              <p className="text-xs text-red-400">
+                A working directory is required for {selectedTemplate?.name}
+              </p>
+            )}
             <div className="flex gap-2">
               <input
                 type="text"
@@ -412,7 +464,7 @@ export function AgentLaunchModal({
             </button>
             <button
               type="submit"
-              disabled={!instructions.trim()}
+              disabled={!instructions.trim() || directoryMissing}
               className={cn(
                 'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium',
                 'bg-gradient-to-r from-violet-500 to-purple-600',

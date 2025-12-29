@@ -108,9 +108,7 @@ export function APIKeysSection({ selectedModel, onModelChange }: APIKeysSectionP
   const handleDeleteKey = async (providerId: string) => {
     try {
       await window.api.credentials.deleteKey(providerId)
-      setProviders((prev) =>
-        prev.map((p) => (p.id === providerId ? { ...p, hasKey: false } : p))
-      )
+      setProviders((prev) => prev.map((p) => (p.id === providerId ? { ...p, hasKey: false } : p)))
       setExpandedProvider(null)
     } catch (err) {
       setError('Failed to delete API key')

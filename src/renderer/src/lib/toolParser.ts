@@ -59,20 +59,14 @@ export function extractFirstToolCall(content: string): ToolCall | null {
 /**
  * Format tool result for AI context
  */
-export function formatToolResult(
-  toolName: string,
-  result: unknown,
-  error?: string
-): string {
+export function formatToolResult(toolName: string, result: unknown, error?: string): string {
   if (error) {
     return `<tool_result name="${toolName}" status="error">
 ${error}
 </tool_result>`
   }
 
-  const resultStr = typeof result === 'string' 
-    ? result 
-    : JSON.stringify(result, null, 2)
+  const resultStr = typeof result === 'string' ? result : JSON.stringify(result, null, 2)
 
   return `<tool_result name="${toolName}" status="success">
 ${resultStr}

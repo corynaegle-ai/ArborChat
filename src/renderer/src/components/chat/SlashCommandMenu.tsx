@@ -1,19 +1,13 @@
 /**
  * SlashCommandMenu Component
  * Displays autocomplete suggestions for slash commands above the chat input
- * 
+ *
  * @author Alex Chen (Design Lead)
  * @phase Phase 4: Slash Commands
  */
 
 import { useEffect, useRef } from 'react'
-import { 
-  User, 
-  List, 
-  X,
-  ChevronRight,
-  Command
-} from 'lucide-react'
+import { User, List, X, ChevronRight, Command } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { SlashCommandState } from '../../hooks/useSlashCommands'
 
@@ -23,11 +17,7 @@ interface SlashCommandMenuProps {
   onClose: () => void
 }
 
-export function SlashCommandMenu({ 
-  state, 
-  onSelect, 
-  onClose 
-}: SlashCommandMenuProps) {
+export function SlashCommandMenu({ state, onSelect, onClose }: SlashCommandMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
   const selectedRef = useRef<HTMLButtonElement>(null)
 
@@ -65,11 +55,9 @@ export function SlashCommandMenu({
   const getCommandIcon = (name: string, customIcon?: string) => {
     // If there's a custom emoji icon, use it
     if (customIcon && customIcon.length <= 4) {
-      return (
-        <span className="text-base leading-none">{customIcon}</span>
-      )
+      return <span className="text-base leading-none">{customIcon}</span>
     }
-    
+
     // Otherwise use Lucide icons
     if (name.includes('list')) return <List size={14} />
     if (name.includes('clear')) return <X size={14} />
@@ -81,13 +69,13 @@ export function SlashCommandMenu({
     <div
       ref={menuRef}
       className={cn(
-        "absolute bottom-full left-0 right-0 mb-2",
-        "bg-secondary/95 backdrop-blur-md",
-        "border border-tertiary rounded-xl",
-        "shadow-xl shadow-black/30",
-        "max-h-72 overflow-y-auto",
-        "z-50",
-        "animate-in fade-in slide-in-from-bottom-2 duration-150"
+        'absolute bottom-full left-0 right-0 mb-2',
+        'bg-secondary/95 backdrop-blur-md',
+        'border border-tertiary rounded-xl',
+        'shadow-xl shadow-black/30',
+        'max-h-72 overflow-y-auto',
+        'z-50',
+        'animate-in fade-in slide-in-from-bottom-2 duration-150'
       )}
       role="listbox"
       aria-label="Command suggestions"
@@ -101,12 +89,12 @@ export function SlashCommandMenu({
             {state.matches.length} result{state.matches.length !== 1 ? 's' : ''}
           </span>
         </div>
-        
+
         {/* Command List */}
         {state.matches.map((match, index) => {
           const isSelected = index === state.selectedIndex
           const IconElement = getCommandIcon(match.command.name, match.command.icon)
-          
+
           return (
             <button
               key={`${match.command.name}-${index}`}
@@ -116,39 +104,43 @@ export function SlashCommandMenu({
               role="option"
               aria-selected={isSelected}
               className={cn(
-                "w-full flex items-center gap-3 p-2.5 rounded-lg",
-                "text-left transition-all duration-100",
+                'w-full flex items-center gap-3 p-2.5 rounded-lg',
+                'text-left transition-all duration-100',
                 isSelected
-                  ? "bg-primary/20 text-white"
-                  : "text-text-muted hover:bg-tertiary hover:text-text-normal"
+                  ? 'bg-primary/20 text-white'
+                  : 'text-text-muted hover:bg-tertiary hover:text-text-normal'
               )}
             >
               {/* Icon Container */}
-              <div className={cn(
-                "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
-                "transition-colors duration-100",
-                isSelected ? "bg-primary/30" : "bg-tertiary"
-              )}>
+              <div
+                className={cn(
+                  'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
+                  'transition-colors duration-100',
+                  isSelected ? 'bg-primary/30' : 'bg-tertiary'
+                )}
+              >
                 {IconElement}
               </div>
-              
+
               {/* Command Details */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <code className={cn(
-                    "font-mono text-sm",
-                    isSelected ? "text-white" : "text-text-normal"
-                  )}>
+                  <code
+                    className={cn(
+                      'font-mono text-sm',
+                      isSelected ? 'text-white' : 'text-text-normal'
+                    )}
+                  >
                     {match.command.syntax}
                   </code>
-                  {isSelected && (
-                    <ChevronRight size={12} className="text-primary shrink-0" />
-                  )}
+                  {isSelected && <ChevronRight size={12} className="text-primary shrink-0" />}
                 </div>
-                <span className={cn(
-                  "text-xs line-clamp-1",
-                  isSelected ? "text-text-muted" : "text-text-muted/70"
-                )}>
+                <span
+                  className={cn(
+                    'text-xs line-clamp-1',
+                    isSelected ? 'text-text-muted' : 'text-text-muted/70'
+                  )}
+                >
                   {match.command.description}
                 </span>
               </div>
@@ -156,7 +148,7 @@ export function SlashCommandMenu({
           )
         })}
       </div>
-      
+
       {/* Footer Hints */}
       <div className="border-t border-tertiary/50 px-3 py-2 flex items-center gap-4 text-xs text-text-muted/60">
         <span className="inline-flex items-center gap-1.5">

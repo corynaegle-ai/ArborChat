@@ -39,11 +39,20 @@ function generateAgentName(): string {
 // Action types
 type AgentAction =
   | { type: 'CREATE_AGENT'; payload: Agent }
-  | { type: 'UPDATE_AGENT_STATUS'; payload: { agentId: string; status: AgentStatus; error?: string } }
+  | {
+      type: 'UPDATE_AGENT_STATUS'
+      payload: { agentId: string; status: AgentStatus; error?: string }
+    }
   | { type: 'ADD_AGENT_MESSAGE'; payload: { agentId: string; message: AgentMessage } }
-  | { type: 'UPDATE_AGENT_MESSAGE'; payload: { agentId: string; messageId: string; content: string } }
+  | {
+      type: 'UPDATE_AGENT_MESSAGE'
+      payload: { agentId: string; messageId: string; content: string }
+    }
   | { type: 'ADD_AGENT_STEP'; payload: { agentId: string; step: AgentStep } }
-  | { type: 'UPDATE_STEP'; payload: { agentId: string; stepId: string; updates: Partial<AgentStep> } }
+  | {
+      type: 'UPDATE_STEP'
+      payload: { agentId: string; stepId: string; updates: Partial<AgentStep> }
+    }
   | { type: 'SET_PENDING_TOOL'; payload: { agentId: string; toolCall: Agent['pendingToolCall'] } }
   | { type: 'SET_ACTIVE_AGENT'; payload: string | null }
   | { type: 'TOGGLE_PANEL'; payload?: boolean }
@@ -77,11 +86,11 @@ function agentReducer(state: AgentState, action: AgentAction): AgentState {
       const agent = state.agents[action.payload.agentId]
       if (!agent) return state
 
-      const updates: Partial<Agent> = { 
+      const updates: Partial<Agent> = {
         status: action.payload.status,
         error: action.payload.error
       }
-      
+
       if (action.payload.status === 'running' && !agent.startedAt) {
         updates.startedAt = Date.now()
       }
@@ -109,9 +118,10 @@ function agentReducer(state: AgentState, action: AgentAction): AgentState {
           [action.payload.agentId]: {
             ...agent,
             messages: [...agent.messages, action.payload.message],
-            stepsCompleted: action.payload.message.role === 'assistant' 
-              ? agent.stepsCompleted + 1 
-              : agent.stepsCompleted
+            stepsCompleted:
+              action.payload.message.role === 'assistant'
+                ? agent.stepsCompleted + 1
+                : agent.stepsCompleted
           }
         }
       }
@@ -121,10 +131,8 @@ function agentReducer(state: AgentState, action: AgentAction): AgentState {
       const agent = state.agents[action.payload.agentId]
       if (!agent) return state
 
-      const updatedMessages = agent.messages.map(msg =>
-        msg.id === action.payload.messageId
-          ? { ...msg, content: action.payload.content }
-          : msg
+      const updatedMessages = agent.messages.map((msg) =>
+        msg.id === action.payload.messageId ? { ...msg, content: action.payload.content } : msg
       )
 
       return {
@@ -140,9 +148,10 @@ function agentReducer(state: AgentState, action: AgentAction): AgentState {
       const agent = state.agents[action.payload.agentId]
       if (!agent) return state
 
-      const newPendingApprovals = action.payload.step.toolCall?.status === 'pending'
-        ? [...agent.pendingApprovals, action.payload.step.id]
-        : agent.pendingApprovals
+      const newPendingApprovals =
+        action.payload.step.toolCall?.status === 'pending'
+          ? [...agent.pendingApprovals, action.payload.step.id]
+          : agent.pendingApprovals
 
       return {
         ...state,
@@ -161,17 +170,15 @@ function agentReducer(state: AgentState, action: AgentAction): AgentState {
       const agent = state.agents[action.payload.agentId]
       if (!agent) return state
 
-      const updatedSteps = agent.steps.map(step =>
-        step.id === action.payload.stepId
-          ? { ...step, ...action.payload.updates }
-          : step
+      const updatedSteps = agent.steps.map((step) =>
+        step.id === action.payload.stepId ? { ...step, ...action.payload.updates } : step
       )
 
       // Remove from pending if approved/denied
       const stepUpdate = action.payload.updates
-      const updatedPendingApprovals = 
+      const updatedPendingApprovals =
         stepUpdate.toolCall?.status && stepUpdate.toolCall.status !== 'pending'
-          ? agent.pendingApprovals.filter(id => id !== action.payload.stepId)
+          ? agent.pendingApprovals.filter((id) => id !== action.payload.stepId)
           : agent.pendingApprovals
 
       return {
@@ -204,8 +211,8 @@ function agentReducer(state: AgentState, action: AgentAction): AgentState {
     }
 
     case 'SET_ACTIVE_AGENT':
-      return { 
-        ...state, 
+      return {
+        ...state,
         activeAgentId: action.payload,
         isPanelOpen: action.payload !== null ? true : state.isPanelOpen
       }
@@ -242,33 +249,32 @@ function agentReducer(state: AgentState, action: AgentAction): AgentState {
   }
 }
 
-
 // Context type
 interface AgentContextType {
   state: AgentState
-  
+
   // Agent lifecycle
   createAgent: (options: CreateAgentOptions) => Agent
   updateAgentStatus: (agentId: string, status: AgentStatus, error?: string) => void
   removeAgent: (agentId: string) => void
   clearAllAgents: () => void
-  
+
   // Agent messages
   addAgentMessage: (agentId: string, role: 'user' | 'assistant', content: string) => AgentMessage
   updateAgentMessage: (agentId: string, messageId: string, content: string) => void
-  
+
   // Agent steps
   addAgentStep: (agentId: string, step: Omit<AgentStep, 'id'>) => AgentStep
   updateAgentStep: (agentId: string, stepId: string, updates: Partial<AgentStep>) => void
-  
+
   // Tool management
   setPendingTool: (agentId: string, toolCall: Agent['pendingToolCall']) => void
-  
+
   // UI state
   setActiveAgent: (agentId: string | null) => void
   togglePanel: (open?: boolean) => void
   toggleMinimize: (minimized?: boolean) => void
-  
+
   // Computed
   getAgent: (agentId: string) => Agent | undefined
   getActiveAgent: () => Agent | undefined
@@ -279,7 +285,6 @@ interface AgentContextType {
 }
 
 const AgentContext = createContext<AgentContextType | null>(null)
-
 
 // Provider component
 export function AgentProvider({ children }: { children: React.ReactNode }) {
@@ -292,7 +297,7 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
 
     // Build seed messages from context options
     const seedMessages: AgentMessage[] = []
-    
+
     if (options.includeCurrentMessage && options.sourceMessageContent) {
       seedMessages.push({
         id: generateMessageId(),
@@ -301,7 +306,7 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
         timestamp: new Date().toISOString()
       })
     }
-    
+
     if (options.includeFullConversation && options.conversationMessages) {
       seedMessages.push(...options.conversationMessages)
     } else if (options.includeParentContext && options.conversationMessages) {
@@ -379,20 +384,19 @@ You have access to MCP tools for file operations and command execution.`
   }, [])
 
   // Add message to agent
-  const addAgentMessage = useCallback((
-    agentId: string, 
-    role: 'user' | 'assistant', 
-    content: string
-  ): AgentMessage => {
-    const message: AgentMessage = {
-      id: generateMessageId(),
-      role,
-      content,
-      timestamp: new Date().toISOString()
-    }
-    dispatch({ type: 'ADD_AGENT_MESSAGE', payload: { agentId, message } })
-    return message
-  }, [])
+  const addAgentMessage = useCallback(
+    (agentId: string, role: 'user' | 'assistant', content: string): AgentMessage => {
+      const message: AgentMessage = {
+        id: generateMessageId(),
+        role,
+        content,
+        timestamp: new Date().toISOString()
+      }
+      dispatch({ type: 'ADD_AGENT_MESSAGE', payload: { agentId, message } })
+      return message
+    },
+    []
+  )
 
   // Update agent message
   const updateAgentMessage = useCallback((agentId: string, messageId: string, content: string) => {
@@ -410,9 +414,12 @@ You have access to MCP tools for file operations and command execution.`
   }, [])
 
   // Update agent step
-  const updateAgentStep = useCallback((agentId: string, stepId: string, updates: Partial<AgentStep>) => {
-    dispatch({ type: 'UPDATE_STEP', payload: { agentId, stepId, updates } })
-  }, [])
+  const updateAgentStep = useCallback(
+    (agentId: string, stepId: string, updates: Partial<AgentStep>) => {
+      dispatch({ type: 'UPDATE_STEP', payload: { agentId, stepId, updates } })
+    },
+    []
+  )
 
   // Set pending tool
   const setPendingTool = useCallback((agentId: string, toolCall: Agent['pendingToolCall']) => {
@@ -433,16 +440,19 @@ You have access to MCP tools for file operations and command execution.`
   }, [])
 
   // Computed getters
-  const getAgent = useCallback((agentId: string): Agent | undefined => {
-    return state.agents[agentId]
-  }, [state.agents])
+  const getAgent = useCallback(
+    (agentId: string): Agent | undefined => {
+      return state.agents[agentId]
+    },
+    [state.agents]
+  )
 
   const getActiveAgent = useCallback((): Agent | undefined => {
     return state.activeAgentId ? state.agents[state.activeAgentId] : undefined
   }, [state.activeAgentId, state.agents])
 
   const getAgentSummaries = useCallback((): AgentSummary[] => {
-    return Object.values(state.agents).map(agent => ({
+    return Object.values(state.agents).map((agent) => ({
       id: agent.id,
       name: agent.config.name,
       status: agent.status,
@@ -454,79 +464,79 @@ You have access to MCP tools for file operations and command execution.`
 
   const getPendingApprovals = useCallback((): Array<{ agent: Agent; step: AgentStep }> => {
     const approvals: Array<{ agent: Agent; step: AgentStep }> = []
-    
-    Object.values(state.agents).forEach(agent => {
-      agent.pendingApprovals.forEach(stepId => {
-        const step = agent.steps.find(s => s.id === stepId)
+
+    Object.values(state.agents).forEach((agent) => {
+      agent.pendingApprovals.forEach((stepId) => {
+        const step = agent.steps.find((s) => s.id === stepId)
         if (step) {
           approvals.push({ agent, step })
         }
       })
     })
-    
+
     return approvals
   }, [state.agents])
 
   const getRunningAgents = useCallback((): Agent[] => {
     return Object.values(state.agents).filter(
-      agent => agent.status === 'running' || agent.status === 'waiting'
+      (agent) => agent.status === 'running' || agent.status === 'waiting'
     )
   }, [state.agents])
 
   const hasActiveAgents = useCallback((): boolean => {
     return Object.values(state.agents).some(
-      agent => agent.status === 'running' || agent.status === 'waiting' || agent.status === 'created'
+      (agent) =>
+        agent.status === 'running' || agent.status === 'waiting' || agent.status === 'created'
     )
   }, [state.agents])
 
   // Memoized context value
-  const contextValue = useMemo<AgentContextType>(() => ({
-    state,
-    createAgent,
-    updateAgentStatus,
-    removeAgent,
-    clearAllAgents,
-    addAgentMessage,
-    updateAgentMessage,
-    addAgentStep,
-    updateAgentStep,
-    setPendingTool,
-    setActiveAgent,
-    togglePanel,
-    toggleMinimize,
-    getAgent,
-    getActiveAgent,
-    getAgentSummaries,
-    getPendingApprovals,
-    getRunningAgents,
-    hasActiveAgents
-  }), [
-    state,
-    createAgent,
-    updateAgentStatus,
-    removeAgent,
-    clearAllAgents,
-    addAgentMessage,
-    updateAgentMessage,
-    addAgentStep,
-    updateAgentStep,
-    setPendingTool,
-    setActiveAgent,
-    togglePanel,
-    toggleMinimize,
-    getAgent,
-    getActiveAgent,
-    getAgentSummaries,
-    getPendingApprovals,
-    getRunningAgents,
-    hasActiveAgents
-  ])
-
-  return (
-    <AgentContext.Provider value={contextValue}>
-      {children}
-    </AgentContext.Provider>
+  const contextValue = useMemo<AgentContextType>(
+    () => ({
+      state,
+      createAgent,
+      updateAgentStatus,
+      removeAgent,
+      clearAllAgents,
+      addAgentMessage,
+      updateAgentMessage,
+      addAgentStep,
+      updateAgentStep,
+      setPendingTool,
+      setActiveAgent,
+      togglePanel,
+      toggleMinimize,
+      getAgent,
+      getActiveAgent,
+      getAgentSummaries,
+      getPendingApprovals,
+      getRunningAgents,
+      hasActiveAgents
+    }),
+    [
+      state,
+      createAgent,
+      updateAgentStatus,
+      removeAgent,
+      clearAllAgents,
+      addAgentMessage,
+      updateAgentMessage,
+      addAgentStep,
+      updateAgentStep,
+      setPendingTool,
+      setActiveAgent,
+      togglePanel,
+      toggleMinimize,
+      getAgent,
+      getActiveAgent,
+      getAgentSummaries,
+      getPendingApprovals,
+      getRunningAgents,
+      hasActiveAgents
+    ]
   )
+
+  return <AgentContext.Provider value={contextValue}>{children}</AgentContext.Provider>
 }
 
 // Hook to use agent context

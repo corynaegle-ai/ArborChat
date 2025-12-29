@@ -1,13 +1,5 @@
 import { useState, useCallback } from 'react'
-import {
-  X,
-  Wand2,
-  User,
-  FileText,
-  Sparkles,
-  Loader2,
-  AlertCircle
-} from 'lucide-react'
+import { X, Wand2, User, FileText, Sparkles, Loader2, AlertCircle } from 'lucide-react'
 import { cn } from '../../../lib/utils'
 
 // Validation constants (must match service.ts)
@@ -76,21 +68,21 @@ export function CreatePersonaModal({ onClose, onCreated }: CreatePersonaModalPro
   const handleNameChange = (value: string) => {
     setName(value)
     if (validationErrors.name) {
-      setValidationErrors(prev => ({ ...prev, name: undefined }))
+      setValidationErrors((prev) => ({ ...prev, name: undefined }))
     }
   }
 
   const handleDescriptionChange = (value: string) => {
     setDescription(value)
     if (validationErrors.description) {
-      setValidationErrors(prev => ({ ...prev, description: undefined }))
+      setValidationErrors((prev) => ({ ...prev, description: undefined }))
     }
   }
 
   const handleContentChange = (value: string) => {
     setContent(value)
     if (validationErrors.content) {
-      setValidationErrors(prev => ({ ...prev, content: undefined }))
+      setValidationErrors((prev) => ({ ...prev, content: undefined }))
     }
   }
 
@@ -102,7 +94,7 @@ export function CreatePersonaModal({ onClose, onCreated }: CreatePersonaModalPro
 
     try {
       const generated = await window.api.personas.generate(description, name)
-      
+
       // Create the persona with generated content
       await window.api.personas.create({
         name: generated.name || name,
@@ -143,37 +135,40 @@ export function CreatePersonaModal({ onClose, onCreated }: CreatePersonaModalPro
   }
 
   // Character count helper component
-  const CharacterCount = ({ current, max, warning = 0.8 }: { 
+  const CharacterCount = ({
+    current,
+    max,
+    warning = 0.8
+  }: {
     current: number
-    max: number 
+    max: number
     warning?: number
   }) => {
     const percentage = current / max
     const isWarning = percentage >= warning
     const isError = percentage >= 1
-    
+
     return (
-      <span className={cn(
-        "text-xs",
-        isError ? "text-red-400" : isWarning ? "text-yellow-400" : "text-text-muted/60"
-      )}>
+      <span
+        className={cn(
+          'text-xs',
+          isError ? 'text-red-400' : isWarning ? 'text-yellow-400' : 'text-text-muted/60'
+        )}
+      >
         {current.toLocaleString()}/{max.toLocaleString()}
       </span>
     )
   }
 
   return (
-    <div 
-      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
-      <div 
+      <div
         className={cn(
-          "relative w-full max-w-2xl max-h-[90vh] overflow-y-auto",
-          "bg-background rounded-xl border border-secondary",
-          "shadow-2xl shadow-black/50"
+          'relative w-full max-w-2xl max-h-[90vh] overflow-y-auto',
+          'bg-background rounded-xl border border-secondary',
+          'shadow-2xl shadow-black/50'
         )}
         onClick={(e) => e.stopPropagation()}
       >
@@ -206,11 +201,9 @@ export function CreatePersonaModal({ onClose, onCreated }: CreatePersonaModalPro
                 setValidationErrors({})
               }}
               className={cn(
-                "flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md",
-                "text-sm font-medium transition-all",
-                mode === 'generate'
-                  ? "bg-primary text-white"
-                  : "text-text-muted hover:text-white"
+                'flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md',
+                'text-sm font-medium transition-all',
+                mode === 'generate' ? 'bg-primary text-white' : 'text-text-muted hover:text-white'
               )}
             >
               <Wand2 size={16} />
@@ -222,11 +215,9 @@ export function CreatePersonaModal({ onClose, onCreated }: CreatePersonaModalPro
                 setValidationErrors({})
               }}
               className={cn(
-                "flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md",
-                "text-sm font-medium transition-all",
-                mode === 'manual'
-                  ? "bg-primary text-white"
-                  : "text-text-muted hover:text-white"
+                'flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md',
+                'text-sm font-medium transition-all',
+                mode === 'manual' ? 'bg-primary text-white' : 'text-text-muted hover:text-white'
               )}
             >
               <FileText size={16} />
@@ -264,13 +255,13 @@ export function CreatePersonaModal({ onClose, onCreated }: CreatePersonaModalPro
                 onChange={(e) => handleNameChange(e.target.value)}
                 placeholder="e.g., Senior Developer, Creative Writer..."
                 className={cn(
-                  "w-full px-3 py-2 rounded-lg",
-                  "bg-secondary border",
+                  'w-full px-3 py-2 rounded-lg',
+                  'bg-secondary border',
                   validationErrors.name
-                    ? "border-red-400 focus:ring-red-400/50"
-                    : "border-secondary/50 focus:ring-primary/50",
-                  "text-white placeholder-text-muted/50",
-                  "focus:outline-none focus:ring-2"
+                    ? 'border-red-400 focus:ring-red-400/50'
+                    : 'border-secondary/50 focus:ring-primary/50',
+                  'text-white placeholder-text-muted/50',
+                  'focus:outline-none focus:ring-2'
                 )}
               />
               {validationErrors.name && (
@@ -290,13 +281,13 @@ export function CreatePersonaModal({ onClose, onCreated }: CreatePersonaModalPro
                   placeholder="Describe the persona you want to create. Be specific about their expertise, communication style, and how they should behave..."
                   rows={6}
                   className={cn(
-                    "w-full px-3 py-2 rounded-lg resize-none",
-                    "bg-secondary border",
+                    'w-full px-3 py-2 rounded-lg resize-none',
+                    'bg-secondary border',
                     validationErrors.description
-                      ? "border-red-400 focus:ring-red-400/50"
-                      : "border-secondary/50 focus:ring-primary/50",
-                    "text-white placeholder-text-muted/50",
-                    "focus:outline-none focus:ring-2"
+                      ? 'border-red-400 focus:ring-red-400/50'
+                      : 'border-secondary/50 focus:ring-primary/50',
+                    'text-white placeholder-text-muted/50',
+                    'focus:outline-none focus:ring-2'
                   )}
                 />
                 {validationErrors.description && (
@@ -320,9 +311,9 @@ export function CreatePersonaModal({ onClose, onCreated }: CreatePersonaModalPro
                       value={emoji}
                       onChange={(e) => setEmoji(e.target.value.slice(-2))}
                       className={cn(
-                        "w-full px-3 py-2 rounded-lg text-center text-2xl",
-                        "bg-secondary border border-secondary/50",
-                        "focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        'w-full px-3 py-2 rounded-lg text-center text-2xl',
+                        'bg-secondary border border-secondary/50',
+                        'focus:outline-none focus:ring-2 focus:ring-primary/50'
                       )}
                     />
                   </div>
@@ -339,13 +330,13 @@ export function CreatePersonaModal({ onClose, onCreated }: CreatePersonaModalPro
                       onChange={(e) => handleDescriptionChange(e.target.value)}
                       placeholder="Brief description of this persona"
                       className={cn(
-                        "w-full px-3 py-2 rounded-lg",
-                        "bg-secondary border",
+                        'w-full px-3 py-2 rounded-lg',
+                        'bg-secondary border',
                         validationErrors.description
-                          ? "border-red-400 focus:ring-red-400/50"
-                          : "border-secondary/50 focus:ring-primary/50",
-                        "text-white placeholder-text-muted/50",
-                        "focus:outline-none focus:ring-2"
+                          ? 'border-red-400 focus:ring-red-400/50'
+                          : 'border-secondary/50 focus:ring-primary/50',
+                        'text-white placeholder-text-muted/50',
+                        'focus:outline-none focus:ring-2'
                       )}
                     />
                     {validationErrors.description && (
@@ -360,9 +351,9 @@ export function CreatePersonaModal({ onClose, onCreated }: CreatePersonaModalPro
                     <label className="block text-sm font-medium text-text-normal">
                       Persona Instructions <span className="text-red-400">*</span>
                     </label>
-                    <CharacterCount 
-                      current={content.length} 
-                      max={MAX_CONTENT_LENGTH} 
+                    <CharacterCount
+                      current={content.length}
+                      max={MAX_CONTENT_LENGTH}
                       warning={0.9}
                     />
                   </div>
@@ -372,20 +363,21 @@ export function CreatePersonaModal({ onClose, onCreated }: CreatePersonaModalPro
                     placeholder="Write the system prompt instructions for this persona. This will be injected into the AI context when the persona is active..."
                     rows={12}
                     className={cn(
-                      "w-full px-3 py-2 rounded-lg resize-none font-mono text-sm",
-                      "bg-secondary border",
+                      'w-full px-3 py-2 rounded-lg resize-none font-mono text-sm',
+                      'bg-secondary border',
                       validationErrors.content
-                        ? "border-red-400 focus:ring-red-400/50"
-                        : "border-secondary/50 focus:ring-primary/50",
-                      "text-white placeholder-text-muted/50",
-                      "focus:outline-none focus:ring-2"
+                        ? 'border-red-400 focus:ring-red-400/50'
+                        : 'border-secondary/50 focus:ring-primary/50',
+                      'text-white placeholder-text-muted/50',
+                      'focus:outline-none focus:ring-2'
                     )}
                   />
                   {validationErrors.content && (
                     <p className="text-xs text-red-400 mt-1">{validationErrors.content}</p>
                   )}
                   <p className="mt-1.5 text-xs text-text-muted">
-                    Write in Markdown. Describe who the persona is, their expertise, communication style, and guidelines.
+                    Write in Markdown. Describe who the persona is, their expertise, communication
+                    style, and guidelines.
                   </p>
                 </div>
               </>
@@ -405,10 +397,10 @@ export function CreatePersonaModal({ onClose, onCreated }: CreatePersonaModalPro
             onClick={mode === 'generate' ? handleGenerate : handleManualCreate}
             disabled={loading}
             className={cn(
-              "flex items-center gap-2 px-5 py-2 rounded-lg",
-              "bg-primary hover:bg-primary/90 text-white font-medium",
-              "disabled:opacity-50 disabled:cursor-not-allowed",
-              "transition-colors"
+              'flex items-center gap-2 px-5 py-2 rounded-lg',
+              'bg-primary hover:bg-primary/90 text-white font-medium',
+              'disabled:opacity-50 disabled:cursor-not-allowed',
+              'transition-colors'
             )}
           >
             {loading ? (
