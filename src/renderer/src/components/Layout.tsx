@@ -42,6 +42,8 @@ export interface LayoutProps {
   
   // Agent Props (Phase 1)
   onAgentLaunch?: (messageContent: string) => void
+  // Phase 5: Session resumption
+  onResumeSession?: () => void
 }
 
 function LoadingState() {
@@ -112,7 +114,9 @@ export function Layout({
   onActivatePersona,
   onShowPersonaList,
   // Agent Props (Phase 1)
-  onAgentLaunch
+  onAgentLaunch,
+  // Phase 5: Session resumption
+  onResumeSession
 }: LayoutProps) {
   const isThreadOpen = !!rootMessage
 
@@ -131,6 +135,7 @@ export function Layout({
         onDelete={onDeleteConversation}
         onRename={onRenameConversation}
         onSettings={onSettings}
+        onResumeSession={onResumeSession}
       />
 
       {/* Main content area */}

@@ -374,6 +374,10 @@ const workJournalApi = {
   getActiveSession: (conversationId: string) =>
     ipcRenderer.invoke('work-journal:get-active-session', conversationId) as Promise<WorkSession | null>,
 
+  // Get sessions that can be resumed (paused or crashed)
+  getResumableSessions: (limit?: number) =>
+    ipcRenderer.invoke('work-journal:get-resumable-sessions', limit) as Promise<WorkSession[]>,
+
   updateSessionStatus: (
     sessionId: string,
     status: 'active' | 'paused' | 'completed' | 'crashed'

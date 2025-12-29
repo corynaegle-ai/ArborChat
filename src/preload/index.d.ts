@@ -219,6 +219,7 @@ interface WorkJournalAPI {
   
   // Resumption
   generateResumptionContext: (sessionId: string, targetTokens?: number) => Promise<ResumptionContext>
+  getResumableSessions: (limit?: number) => Promise<WorkSession[]>
   
   // Utilities
   getSessionTokens: (sessionId: string) => Promise<number>

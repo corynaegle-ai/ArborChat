@@ -1,6 +1,8 @@
 // src/renderer/src/contexts/AgentContext.tsx
+// Phase 6.5: Memory Cleanup & Resource Management
+// Author: Alex Chen (Distinguished Software Architect)
 
-import React, { createContext, useContext, useReducer, useCallback, useMemo } from 'react'
+import React, { createContext, useContext, useReducer, useCallback, useMemo, useRef } from 'react'
 import type {
   Agent,
   AgentState,
@@ -36,6 +38,34 @@ function generateAgentName(): string {
   return `${adj} ${noun}`
 }
 
+// Cleanup function type for resource management
+type CleanupFunction = () => void
+
+// Resumption types (matches WorkJournal types)
+export interface ResumptionContext {
+  originalPrompt: string
+  workSummary: string
+  keyDecisions: string[]
+  currentState: string
+  filesModified: string[]
+  pendingActions: string[]
+  errorHistory: string[]
+  suggestedNextSteps: string[]
+  tokenCount: number
+}
+
+export interface ResumedSession {
+  id: string
+  conversationId: string
+  originalPrompt: string
+  status: 'active' | 'paused' | 'completed' | 'crashed'
+  createdAt: number
+  updatedAt: number
+  completedAt?: number
+  tokenEstimate: number
+  entryCount: number
+}
+
 // Action types
 type AgentAction =
   | { type: 'CREATE_AGENT'; payload: Agent }
@@ -50,6 +80,7 @@ type AgentAction =
   | { type: 'TOGGLE_MINIMIZE'; payload?: boolean }
   | { type: 'REMOVE_AGENT'; payload: string }
   | { type: 'CLEAR_ALL_AGENTS' }
+  | { type: 'TRIM_AGENT_HISTORY'; payload: { agentId: string; maxSteps: number; maxMessages: number } }
 
 // Initial state
 const initialState: AgentState = {
@@ -237,13 +268,50 @@ function agentReducer(state: AgentState, action: AgentAction): AgentState {
         ...initialState
       }
 
+    // New action for trimming agent history to prevent memory bloat
+    case 'TRIM_AGENT_HISTORY': {
+      const agent = state.agents[action.payload.agentId]
+      if (!agent) return state
+
+      const { maxSteps, maxMessages } = action.payload
+      
+      // Trim steps - keep most recent, preserve pending approvals
+      const pendingStepIds = new Set(agent.pendingApprovals)
+      let trimmedSteps = agent.steps
+      if (agent.steps.length > maxSteps) {
+        // Keep pending steps and most recent steps
+        const pendingSteps = agent.steps.filter(s => pendingStepIds.has(s.id))
+        const nonPendingSteps = agent.steps.filter(s => !pendingStepIds.has(s.id))
+        const recentNonPending = nonPendingSteps.slice(-maxSteps)
+        trimmedSteps = [...recentNonPending, ...pendingSteps]
+          .sort((a, b) => a.timestamp - b.timestamp)
+      }
+
+      // Trim messages - keep most recent
+      const trimmedMessages = agent.messages.length > maxMessages
+        ? agent.messages.slice(-maxMessages)
+        : agent.messages
+
+      return {
+        ...state,
+        agents: {
+          ...state.agents,
+          [action.payload.agentId]: {
+            ...agent,
+            steps: trimmedSteps,
+            messages: trimmedMessages
+          }
+        }
+      }
+    }
+
     default:
       return state
   }
 }
 
 
-// Context type
+// Context type with cleanup registration
 interface AgentContextType {
   state: AgentState
   
@@ -276,14 +344,32 @@ interface AgentContextType {
   getPendingApprovals: () => Array<{ agent: Agent; step: AgentStep }>
   getRunningAgents: () => Agent[]
   hasActiveAgents: () => boolean
+
+  // Phase 6.5: Cleanup registration for resource management
+  registerCleanup: (agentId: string, cleanup: CleanupFunction) => void
+  unregisterCleanup: (agentId: string) => void
+  
+  // Phase 6.5: History management for memory control
+  trimAgentHistory: (agentId: string, maxSteps?: number, maxMessages?: number) => void
+
+  // Phase 5: Session resumption support
+  createAgentWithResumption: (
+    conversationId: string,
+    session: ResumedSession,
+    context: ResumptionContext,
+    options?: Partial<CreateAgentOptions>
+  ) => Agent
 }
 
 const AgentContext = createContext<AgentContextType | null>(null)
 
 
-// Provider component
+// Provider component with cleanup management
 export function AgentProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(agentReducer, initialState)
+  
+  // Phase 6.5: Cleanup registry - stores cleanup functions per agent
+  const cleanupRegistryRef = useRef<Map<string, CleanupFunction>>(new Map())
 
   // Create a new agent
   const createAgent = useCallback((options: CreateAgentOptions): Agent => {
@@ -363,19 +449,132 @@ You have access to MCP tools for file operations and command execution.`
     return agent
   }, [])
 
+  // Phase 5: Create agent with resumption context from previous session
+  const createAgentWithResumption = useCallback((
+    conversationId: string,
+    session: ResumedSession,
+    context: ResumptionContext,
+    options?: Partial<CreateAgentOptions>
+  ): Agent => {
+    // Build resumption system prompt
+    const resumptionPrompt = `
+## Resuming Previous Work Session
+
+You are resuming an interrupted work session. Here is the context:
+
+**Original Task:**
+${context.originalPrompt}
+
+**Work Summary:**
+${context.workSummary}
+
+**Current State:**
+${context.currentState}
+
+${context.keyDecisions.length > 0 ? `**Key Decisions Made:**
+${context.keyDecisions.map(d => `- ${d}`).join('\n')}` : ''}
+
+${context.filesModified.length > 0 ? `**Files Modified:**
+${context.filesModified.map(f => `- ${f}`).join('\n')}` : ''}
+
+${context.pendingActions.length > 0 ? `**Pending Actions:**
+${context.pendingActions.map(a => `- ${a}`).join('\n')}` : ''}
+
+${context.errorHistory.length > 0 ? `**Previous Errors (avoid repeating):**
+${context.errorHistory.map(e => `- ${e}`).join('\n')}` : ''}
+
+${context.suggestedNextSteps.length > 0 ? `**Suggested Next Steps:**
+${context.suggestedNextSteps.map(s => `- ${s}`).join('\n')}` : ''}
+
+Please continue from where the previous session left off. Acknowledge the resumption briefly, then proceed with the remaining work.
+`.trim()
+
+    // Create agent with resumption as instructions
+    const agent = createAgent({
+      conversationId,
+      name: `Resumed: ${session.originalPrompt.slice(0, 25)}...`,
+      instructions: resumptionPrompt,
+      toolPermission: options?.toolPermission || 'standard',
+      model: options?.model || 'gemini-2.5-flash',
+      personaId: options?.personaId,
+      personaContent: options?.personaContent,
+      includeCurrentMessage: false,
+      includeFullConversation: false,
+      includeParentContext: false,
+      ...options
+    })
+
+    // Add resumption metadata to agent
+    // (Note: metadata field would need to be added to Agent type for full implementation)
+    console.log(`[AgentContext] Created resumed agent ${agent.id} from session ${session.id}`)
+
+    return agent
+  }, [createAgent])
+
   // Update agent status
   const updateAgentStatus = useCallback((agentId: string, status: AgentStatus, error?: string) => {
     dispatch({ type: 'UPDATE_AGENT_STATUS', payload: { agentId, status, error } })
   }, [])
 
-  // Remove agent
+  // Phase 6.5: Remove agent with cleanup coordination
   const removeAgent = useCallback((agentId: string) => {
+    console.log(`[AgentContext] Removing agent ${agentId}, triggering cleanup...`)
+    
+    // 1. Call registered cleanup function if it exists
+    const cleanup = cleanupRegistryRef.current.get(agentId)
+    if (cleanup) {
+      try {
+        cleanup()
+        console.log(`[AgentContext] Cleanup completed for agent ${agentId}`)
+      } catch (err) {
+        console.error(`[AgentContext] Cleanup error for agent ${agentId}:`, err)
+      }
+      cleanupRegistryRef.current.delete(agentId)
+    }
+    
+    // 2. Remove from state
     dispatch({ type: 'REMOVE_AGENT', payload: agentId })
   }, [])
 
-  // Clear all agents
+  // Phase 6.5: Clear all agents with cleanup
   const clearAllAgents = useCallback(() => {
+    console.log('[AgentContext] Clearing all agents, triggering cleanups...')
+    
+    // Call cleanup for each registered agent
+    cleanupRegistryRef.current.forEach((cleanup, agentId) => {
+      try {
+        cleanup()
+        console.log(`[AgentContext] Cleanup completed for agent ${agentId}`)
+      } catch (err) {
+        console.error(`[AgentContext] Cleanup error for agent ${agentId}:`, err)
+      }
+    })
+    cleanupRegistryRef.current.clear()
+    
     dispatch({ type: 'CLEAR_ALL_AGENTS' })
+  }, [])
+
+  // Phase 6.5: Register cleanup function for an agent
+  const registerCleanup = useCallback((agentId: string, cleanup: CleanupFunction) => {
+    console.log(`[AgentContext] Registering cleanup for agent ${agentId}`)
+    cleanupRegistryRef.current.set(agentId, cleanup)
+  }, [])
+
+  // Phase 6.5: Unregister cleanup function (called on unmount without removal)
+  const unregisterCleanup = useCallback((agentId: string) => {
+    cleanupRegistryRef.current.delete(agentId)
+  }, [])
+
+  // Phase 6.5: Trim agent history to prevent memory bloat in long sessions
+  const trimAgentHistory = useCallback((
+    agentId: string,
+    maxSteps: number = 100,
+    maxMessages: number = 50
+  ) => {
+    dispatch({ 
+      type: 'TRIM_AGENT_HISTORY', 
+      payload: { agentId, maxSteps, maxMessages } 
+    })
   }, [])
 
   // Add message to agent
@@ -499,7 +698,13 @@ You have access to MCP tools for file operations and command execution.`
     getAgentSummaries,
     getPendingApprovals,
     getRunningAgents,
-    hasActiveAgents
+    hasActiveAgents,
+    // Phase 6.5: Cleanup APIs
+    registerCleanup,
+    unregisterCleanup,
+    trimAgentHistory,
+    // Phase 5: Session resumption
+    createAgentWithResumption
   }), [
     state,
     createAgent,
@@ -519,7 +724,11 @@ You have access to MCP tools for file operations and command execution.`
     getAgentSummaries,
     getPendingApprovals,
     getRunningAgents,
-    hasActiveAgents
+    hasActiveAgents,
+    registerCleanup,
+    unregisterCleanup,
+    trimAgentHistory,
+    createAgentWithResumption
   ])
 
   return (

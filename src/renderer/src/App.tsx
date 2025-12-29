@@ -1,15 +1,18 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { Layout } from './components/Layout'
 import { MCPProvider } from './components/mcp'
+import { WorkJournalProvider, SessionResumeDialog, WorkJournalPanel } from './components/workJournal'
 import { SettingsPanel } from './components/settings'
 import { PersonaListModal } from './components/chat'
-import { AgentProvider, useAgentContext } from './contexts'
+import { ToastContainer } from './components/notifications'
+import { AgentProvider, useAgentContext, NotificationProvider, useNotificationContext } from './contexts'
+import type { ResumptionContext, ResumedSession } from './contexts/AgentContext'
 import { AgentLaunchModal, AgentIndicator, AgentPanelContainer } from './components/agent'
 import { Conversation, Message } from './types'
 import { PersonaMetadata } from './types/persona'
 import type { AgentToolPermission, AgentMessage } from './types/agent'
 import { Loader2 } from 'lucide-react'
-import { useToolChat } from './hooks'
+import { useToolChat, useAgentNotifications } from './hooks'
 
 function ApiKeyPrompt({ onSave }: { onSave: (k: string) => void }) {
   const [key, setKey] = useState('')
@@ -82,7 +85,15 @@ function ApiKeyPrompt({ onSave }: { onSave: (k: string) => void }) {
 // Main content component that uses MCP hooks (must be inside MCPProvider)
 function AppContent({ apiKey }: { apiKey: string }) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [selectedModel, setSelectedModel] = useState('gemini-2.5-flash')
+  const [selectedModel, setSelectedModelState] = useState('gemini-2.5-flash')
+  
+  // Model change handler that persists the selection
+  const setSelectedModel = useCallback((model: string) => {
+    setSelectedModelState(model)
+    window.api.setSelectedModel(model).catch(err => 
+      console.warn('[App] Failed to persist model selection:', err)
+    )
+  }, [])
 
   // Data
   const [conversations, setConversations] = useState<Conversation[]>([])
@@ -118,19 +129,28 @@ function AppContent({ apiKey }: { apiKey: string }) {
     clearPendingTool
   } = useToolChat()
   
+  // Notification integration (Phase 5)
+  const { toasts, dismissToast } = useNotificationContext()
+  useAgentNotifications()
+  
   // Agent state (Phase 1)
   const [showAgentLaunchModal, setShowAgentLaunchModal] = useState(false)
   const [agentLaunchContext, setAgentLaunchContext] = useState<string | undefined>(undefined)
   const agentContext = useAgentContext()
   
+  // Phase 5: Session resumption & work journal state
+  const [showResumeDialog, setShowResumeDialog] = useState(false)
+  const [showWorkJournal, setShowWorkJournal] = useState(false)
+  const [activeWorkSessionId, setActiveWorkSessionId] = useState<string | null>(null)
+  
   // Refs for continuation context
   const pendingContextRef = useRef<any[]>([])
   const pendingParentIdRef = useRef<string | null>(null)
 
-  // Init
+  // Init - load persisted model selection
   useEffect(() => {
     window.api.getSelectedModel().then((model) => {
-      if (model) setSelectedModel(model)
+      if (model) setSelectedModelState(model)
     })
   }, [])
 
@@ -250,6 +270,30 @@ function AppContent({ apiKey }: { apiKey: string }) {
     setShowAgentLaunchModal(false)
     setAgentLaunchContext(undefined)
   }, [activeId, allMessages, agentLaunchContext, selectedModel, activePersonaId, activePersonaContent, agentContext])
+
+  // Phase 5: Handle session resumption
+  const handleSessionResume = useCallback((session: ResumedSession, context: ResumptionContext) => {
+    const conversationId = activeId || session.conversationId
+    
+    // Create resumed agent
+    agentContext.createAgentWithResumption(
+      conversationId,
+      session,
+      context,
+      {
+        model: selectedModel,
+        toolPermission: 'standard',
+        personaId: activePersonaId || undefined,
+        personaContent: activePersonaContent || undefined
+      }
+    )
+    
+    // Track the work session for the journal panel
+    setActiveWorkSessionId(session.id)
+    setShowWorkJournal(true)
+    setShowResumeDialog(false)
+    agentContext.togglePanel(true)
+  }, [activeId, selectedModel, activePersonaId, activePersonaContent, agentContext])
 
 
   // Views
@@ -587,6 +631,8 @@ function AppContent({ apiKey }: { apiKey: string }) {
         onShowPersonaList={() => setShowPersonaList(true)}
         // Agent Props (Phase 1)
         onAgentLaunch={handleAgentLaunch}
+        // Phase 5: Session resumption
+        onResumeSession={() => setShowResumeDialog(true)}
       />
       <SettingsPanel
         isOpen={isSettingsOpen}
@@ -649,6 +695,23 @@ function AppContent({ apiKey }: { apiKey: string }) {
           />
         </div>
       )}
+      {/* Toast Notifications (Phase 5) */}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+      
+      {/* Phase 5: Session Resume Dialog */}
+      <SessionResumeDialog
+        isOpen={showResumeDialog}
+        onClose={() => setShowResumeDialog(false)}
+        onResume={handleSessionResume}
+      />
+      
+      {/* Phase 5: Work Journal Panel */}
+      <WorkJournalPanel
+        sessionId={activeWorkSessionId}
+        isOpen={showWorkJournal}
+        onToggle={() => setShowWorkJournal(!showWorkJournal)}
+        onClose={() => setShowWorkJournal(false)}
+      />
     </>
   )
 }
@@ -680,7 +743,11 @@ function App() {
   return (
     <MCPProvider autoInit={true}>
       <AgentProvider>
-        <AppContent apiKey={apiKey} />
+        <NotificationProvider>
+          <WorkJournalProvider>
+            <AppContent apiKey={apiKey} />
+          </WorkJournalProvider>
+        </NotificationProvider>
       </AgentProvider>
     </MCPProvider>
   )

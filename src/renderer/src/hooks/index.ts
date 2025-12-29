@@ -1,4 +1,5 @@
 // src/renderer/src/hooks/index.ts
+// Phase 6.5: Added useAgentCleanup for resource management
 
 export { useMCPTools } from './useMCPTools'
 export type { ToolExecution } from './useMCPTools'
@@ -21,3 +22,22 @@ export type { UseAgentResult } from './useAgent'
 // Agent Execution Engine
 export { useAgentRunner } from './useAgentRunner'
 export type { UseAgentRunnerResult, AgentRunnerState } from './useAgentRunner'
+
+// Agent Notifications (Phase 5)
+export { useAgentNotifications } from './useAgentNotifications'
+
+// Phase 6.5: Agent Resource Cleanup
+export { useAgentCleanup, CLEANUP_THRESHOLDS } from './useAgentCleanup'
+export type { MemorySnapshot } from './useAgentCleanup'
+
+// Work Journal hooks
+export { useWorkJournal } from './useWorkJournal'
+export { useWorkSession } from './useWorkSession'
+export type {
+  ThinkingContent,
+  ToolRequestContent,
+  ToolResultContent,
+  DecisionContent,
+  ErrorContent,
+  FileOperationContent
+} from './useWorkJournal'

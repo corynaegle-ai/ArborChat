@@ -3,11 +3,12 @@
 import { useState, useRef, useEffect } from 'react'
 import {
   X, Bot, Send, Pause, Play, AlertCircle,
-  CheckCircle2, Loader2, Sparkles, User, Minimize2, Clock
+  CheckCircle2, Loader2, Sparkles, User, Minimize2, Clock, RotateCcw
 } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { ModelSelector } from '../ModelSelector'
 import { ToolApprovalCard } from '../mcp'
+import { AgentStepTimeline } from './AgentStepTimeline'
 import type { Agent, AgentStatus } from '../../types/agent'
 
 interface AgentPanelProps {
@@ -19,6 +20,9 @@ interface AgentPanelProps {
   onSendMessage: (content: string) => void
   onPause: () => void
   onResume: () => void
+  onRetry?: () => void
+  canRetry?: boolean
+  isRetrying?: boolean
   onClose: () => void
   onMinimize: () => void
   onToolApprove: (id: string, modifiedArgs?: Record<string, unknown>) => void
@@ -146,6 +150,9 @@ export function AgentPanel({
   onSendMessage,
   onPause,
   onResume,
+  onRetry,
+  canRetry = false,
+  isRetrying = false,
   onClose,
   onMinimize,
   onToolApprove,
@@ -215,6 +222,22 @@ export function AgentPanel({
         <div className="flex items-center gap-2">
           <StatusBadge status={agent.status} hasPendingTool={hasPendingTool} />
           
+          {/* Retry button for failed agents */}
+          {canRetry && onRetry && (
+            <button
+              onClick={onRetry}
+              disabled={isRetrying}
+              className={cn(
+                'p-1.5 rounded-md transition-colors',
+                'text-amber-400 hover:bg-amber-500/20',
+                'disabled:opacity-50 disabled:cursor-not-allowed'
+              )}
+              title={isRetrying ? 'Retrying...' : 'Retry'}
+            >
+              <RotateCcw size={16} className={isRetrying ? 'animate-spin' : ''} />
+            </button>
+          )}
+          
           {/* Pause/Resume button */}
           {(isWorking || isPaused) && (
             <button
@@ -268,6 +291,16 @@ export function AgentPanel({
               </p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Step Timeline */}
+      {agent.steps.length > 0 && (
+        <div className="shrink-0 border-b border-violet-500/10 p-3">
+          <AgentStepTimeline
+            steps={agent.steps}
+            currentStepId={agent.steps[agent.currentStepIndex]?.id}
+          />
         </div>
       )}
 

@@ -181,6 +181,18 @@ app.whenReady().then(() => {
         const { AnthropicProvider } = await import('./providers/anthropic')
         return new AnthropicProvider().validateConnection(apiKey)
       }
+      case 'openai': {
+        const { OpenAIProvider } = await import('./providers/openai')
+        return new OpenAIProvider().validateConnection(apiKey)
+      }
+      case 'github': {
+        const { GitHubCopilotProvider } = await import('./providers/github-copilot')
+        return new GitHubCopilotProvider().validateConnection(apiKey)
+      }
+      case 'mistral': {
+        const { MistralProvider } = await import('./providers/mistral')
+        return new MistralProvider().validateConnection(apiKey)
+      }
       default:
         return false
     }
