@@ -5,11 +5,13 @@ import {
   Settings, 
   Check, 
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  Server
 } from 'lucide-react'
 import { cn } from '../../../lib/utils'
 import { ToggleSwitch } from '../shared/ToggleSwitch'
 import { GitHubConfigModal } from '../modals/GitHubConfigModal'
+import { SSHConfigModal } from '../modals/SSHConfigModal'
 
 interface MCPServer {
   id: string
@@ -38,9 +40,10 @@ export function ToolsSection() {
   const loadServerStatus = async () => {
     setLoading(true)
     try {
-      const [status, githubStatus] = await Promise.all([
+      const [status, githubStatus, sshStatus] = await Promise.all([
         window.api.mcp.getStatus(),
-        window.api.mcp.github.getStatus()
+        window.api.mcp.github.getStatus(),
+        window.api.mcp.ssh.getStatus()
       ])
 
       setMcpEnabled(status.config.enabled)
@@ -69,6 +72,18 @@ export function ToolsSection() {
           requiresConfig: true,
           configured: githubStatus.isConfigured,
           toolCount: githubStatus.toolCount
+        },
+        {
+          id: 'ssh-mcp',
+          name: 'ssh-mcp',
+          displayName: 'SSH Remote',
+          description: 'Execute commands on remote servers via SSH',
+          icon: Server,
+          enabled: status.config.servers.find(s => s.name === 'ssh-mcp')?.enabled ?? false,
+          connected: sshStatus.isConnected,
+          requiresConfig: true,
+          configured: sshStatus.isConfigured,
+          toolCount: sshStatus.toolCount
         }
       ]
 
@@ -265,6 +280,12 @@ export function ToolsSection() {
       {/* Modals */}
       {configModal === 'github' && (
         <GitHubConfigModal
+          onClose={() => setConfigModal(null)}
+          onSave={handleConfigSave}
+        />
+      )}
+      {configModal === 'ssh-mcp' && (
+        <SSHConfigModal
           onClose={() => setConfigModal(null)}
           onSave={handleConfigSave}
         />

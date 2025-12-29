@@ -6,6 +6,7 @@ import * as path from 'path'
 import { MCPConfig } from './types'
 import { DESKTOP_COMMANDER_CONFIG } from './servers/desktop-commander'
 import { GITHUB_MCP_CONFIG } from './servers/github'
+import { SSH_MCP_CONFIG } from './servers/ssh-mcp'
 
 const CONFIG_FILE = 'mcp-config.json'
 
@@ -24,7 +25,7 @@ export const DEFAULT_MCP_CONFIG: MCPConfig = {
   ],
   blockedTools: [],
   timeout: 300000, // 5 minutes
-  servers: [DESKTOP_COMMANDER_CONFIG, GITHUB_MCP_CONFIG]
+  servers: [DESKTOP_COMMANDER_CONFIG, GITHUB_MCP_CONFIG, SSH_MCP_CONFIG]
 }
 
 /**
