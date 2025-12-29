@@ -198,6 +198,121 @@ app.whenReady().then(() => {
     }
   })
 
+  // MCP Filesystem Handlers
+  ipcMain.handle('mcp:filesystem:select-directory', async () => {
+    console.log('[MCP Filesystem] Opening directory picker...')
+    const result = await dialog.showOpenDialog({
+      properties: ['openDirectory', 'createDirectory'],
+      title: 'Select Filesystem Access Directory'
+    })
+
+    if (result.canceled || !result.filePaths[0]) {
+      console.log('[MCP Filesystem] Directory selection canceled')
+      return null
+    }
+
+    const selectedPath = result.filePaths[0]
+    console.log('[MCP Filesystem] Directory selected:', selectedPath)
+
+    // Update the filesystem server config
+    const { updateFilesystemAllowedDirectory } = await import('./mcp')
+    const { updateMCPConfig, loadMCPConfig } = await import('./mcp/config')
+
+    const config = loadMCPConfig()
+    console.log(
+      '[MCP Filesystem] Current config servers:',
+      config.servers.map((s) => s.name)
+    )
+
+    const updatedFilesystemConfig = updateFilesystemAllowedDirectory(selectedPath)
+    console.log('[MCP Filesystem] Updated filesystem config:', updatedFilesystemConfig)
+
+    // Find and update the filesystem server in the config
+    const serverIndex = config.servers.findIndex((s) => s.name === 'filesystem')
+    console.log('[MCP Filesystem] Server index in config:', serverIndex)
+
+    if (serverIndex !== -1) {
+      // Enable the server when directory is configured
+      updatedFilesystemConfig.enabled = true
+      config.servers[serverIndex] = updatedFilesystemConfig
+      console.log('[MCP Filesystem] Updating config with enabled server')
+      updateMCPConfig(config)
+      console.log('[MCP Filesystem] Config saved successfully')
+    } else {
+      console.error('[MCP Filesystem] ERROR: Filesystem server not found in config!')
+    }
+
+    return selectedPath
+  })
+
+  ipcMain.handle('mcp:filesystem:get-allowed-directory', async () => {
+    const { loadMCPConfig } = await import('./mcp/config')
+    const config = loadMCPConfig()
+    const filesystemServer = config.servers.find((s) => s.name === 'filesystem')
+
+    console.log('[MCP Filesystem] Getting allowed directory')
+    console.log('[MCP Filesystem] Filesystem server config:', filesystemServer)
+
+    if (filesystemServer && filesystemServer.args.length > 2) {
+      // The directory is the third argument after '-y' and the package name
+      const directory = filesystemServer.args[2]
+      console.log('[MCP Filesystem] Found directory:', directory)
+      return directory
+    }
+
+    console.log('[MCP Filesystem] No directory configured')
+    return null
+  })
+
+  ipcMain.handle('mcp:filesystem:set-allowed-directory', async (_, directory: string) => {
+    const { updateFilesystemAllowedDirectory } = await import('./mcp')
+    const { updateMCPConfig, loadMCPConfig } = await import('./mcp/config')
+
+    const config = loadMCPConfig()
+    const updatedFilesystemConfig = updateFilesystemAllowedDirectory(directory)
+
+    const serverIndex = config.servers.findIndex((s) => s.name === 'filesystem')
+    if (serverIndex !== -1) {
+      config.servers[serverIndex] = updatedFilesystemConfig
+      updateMCPConfig(config)
+
+      // Reconnect the server if it's already connected
+      const { mcpManager } = await import('./mcp')
+      if (mcpManager.isServerConnected('filesystem')) {
+        await mcpManager.reconnectServer('filesystem')
+      }
+    }
+  })
+
+  // MCP Brave Search Handlers
+  ipcMain.handle('mcp:brave-search:validate-key', async (_, apiKey: string) => {
+    // Simple validation - just check if the key looks valid
+    // A real validation would make a test API call
+    if (!apiKey || apiKey.length < 10) {
+      return { valid: false, error: 'API key is too short' }
+    }
+
+    // TODO: Make actual test API call to Brave Search
+    // For now, just accept any non-empty key
+    return { valid: true }
+  })
+
+  // MCP Memory Handlers
+  ipcMain.handle('mcp:memory:clear-all', async () => {
+    // Memory server doesn't have a built-in clear method
+    // We would need to call delete operations for all entities
+    // For now, return success - this can be implemented later
+    console.log('[MCP] Memory clear-all requested')
+    return { success: true, message: 'Memory clear not yet implemented' }
+  })
+
+  ipcMain.handle('mcp:memory:get-stats', async () => {
+    // Memory server doesn't expose stats directly
+    // This would need to be implemented by querying the memory server
+    console.log('[MCP] Memory stats requested')
+    return { count: 0, size: 0, message: 'Stats not yet implemented' }
+  })
+
   // AI Handlers
   ipcMain.on('ai:ask', (event, { apiKey, messages, model }) => {
     const win = BrowserWindow.fromWebContents(event.sender)

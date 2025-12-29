@@ -25,21 +25,25 @@ export interface LayoutProps {
   onThreadSelect: (messageId: string) => void
   onCloseThread: () => void
   onSettings: () => void
-  
+
   // MCP Tool Props
   mcpConnected?: boolean
   pendingToolCall?: PendingToolCall | null
   toolExecutions?: ToolExecution[]
   onToolApprove?: (id: string, modifiedArgs?: Record<string, unknown>) => void
-  onToolAlwaysApprove?: (id: string, toolName: string, modifiedArgs?: Record<string, unknown>) => void
+  onToolAlwaysApprove?: (
+    id: string,
+    toolName: string,
+    modifiedArgs?: Record<string, unknown>
+  ) => void
   onToolReject?: (id: string) => void
-  
+
   // Persona Props (Phase 5)
   activePersonaId?: string | null
   activePersonaName?: string | null
   onActivatePersona?: (id: string | null) => void
   onShowPersonaList?: () => void
-  
+
   // Agent Props (Phase 1)
   onAgentLaunch?: (messageContent: string) => void
   // Phase 5: Session resumption
@@ -102,7 +106,7 @@ export function Layout({
   onCloseThread,
   onSettings,
   // MCP Tool Props
-  mcpConnected: _mcpConnected,
+  mcpConnected,
   pendingToolCall,
   toolExecutions,
   onToolApprove,
@@ -157,6 +161,7 @@ export function Layout({
               threadTitle="Chat"
               selectedModel={selectedModel}
               onModelChange={onModelChange}
+              mcpConnected={mcpConnected}
               pendingToolCall={pendingToolCall}
               toolExecutions={toolExecutions}
               onToolApprove={onToolApprove}

@@ -1,3 +1,7 @@
 export { GitHubConfigModal } from './GitHubConfigModal'
+export { SSHConfigModal } from './SSHConfigModal'
 export { CreatePersonaModal } from './CreatePersonaModal'
 export { PersonaDetailModal } from './PersonaDetailModal'
+export { FilesystemConfigModal } from './FilesystemConfigModal'
+export { BraveSearchConfigModal } from './BraveSearchConfigModal'
+export { MemoryConfigModal } from './MemoryConfigModal'

@@ -181,7 +181,10 @@ const personaApi = {
 
   // Generate a persona using AI
   generate: (description: string, name: string) =>
-    ipcRenderer.invoke('personas:generate', { description, name }) as Promise<PersonaGenerationResult>,
+    ipcRenderer.invoke('personas:generate', {
+      description,
+      name
+    }) as Promise<PersonaGenerationResult>,
 
   // Get the personas directory path
   getDirectory: () => ipcRenderer.invoke('personas:get-directory') as Promise<string>
@@ -231,12 +234,14 @@ const mcpApi = {
   getSystemPrompt: () => ipcRenderer.invoke('mcp:get-system-prompt') as Promise<string>,
 
   // Request tool execution (may require approval)
+  // skipApproval: if true, bypasses approval queue (used when frontend already showed approval card)
   requestTool: (
     serverName: string,
     toolName: string,
     args: Record<string, unknown>,
-    explanation?: string
-  ) => ipcRenderer.invoke('mcp:request-tool', { serverName, toolName, args, explanation }),
+    explanation?: string,
+    skipApproval?: boolean
+  ) => ipcRenderer.invoke('mcp:request-tool', { serverName, toolName, args, explanation, skipApproval }),
 
   // Approve a pending tool call
   approve: (id: string, modifiedArgs?: Record<string, unknown>) =>
@@ -311,14 +316,74 @@ const mcpApi = {
         username?: string
         error?: string
       }>,
-    disconnect: () =>
-      ipcRenderer.invoke('mcp:github:disconnect') as Promise<{ success: boolean }>,
+    disconnect: () => ipcRenderer.invoke('mcp:github:disconnect') as Promise<{ success: boolean }>,
     getStatus: () =>
       ipcRenderer.invoke('mcp:github:status') as Promise<{
         isConfigured: boolean
         isConnected: boolean
         toolCount: number
         username?: string
+      }>
+  },
+
+  // SSH-specific API
+  ssh: {
+    isConfigured: () => ipcRenderer.invoke('mcp:ssh:is-configured') as Promise<boolean>,
+    configure: (creds: {
+      host: string
+      port: number
+      username: string
+      authType: 'password' | 'key'
+      password?: string
+      keyPath?: string
+    }) =>
+      ipcRenderer.invoke('mcp:ssh:configure', creds) as Promise<{
+        success: boolean
+        error?: string
+      }>,
+    disconnect: () =>
+      ipcRenderer.invoke('mcp:ssh:disconnect') as Promise<{ success: boolean }>,
+    getStatus: () =>
+      ipcRenderer.invoke('mcp:ssh:status') as Promise<{
+        isConfigured: boolean
+        isConnected: boolean
+        toolCount: number
+        host?: string
+        username?: string
+      }>
+  },
+
+  // Filesystem-specific API
+  filesystem: {
+    selectDirectory: () =>
+      ipcRenderer.invoke('mcp:filesystem:select-directory') as Promise<string | null>,
+    getAllowedDirectory: () =>
+      ipcRenderer.invoke('mcp:filesystem:get-allowed-directory') as Promise<string | null>,
+    setAllowedDirectory: (directory: string) =>
+      ipcRenderer.invoke('mcp:filesystem:set-allowed-directory', directory) as Promise<void>
+  },
+
+  // Brave Search-specific API
+  braveSearch: {
+    validateKey: (apiKey: string) =>
+      ipcRenderer.invoke('mcp:brave-search:validate-key', apiKey) as Promise<{
+        valid: boolean
+        error?: string
+      }>
+  },
+
+  // Memory-specific API
+  memory: {
+    clearAll: () =>
+      ipcRenderer.invoke('mcp:memory:clear-all') as Promise<{
+        success: boolean
+        message?: string
+      }>,
+    getStats: () =>
+      ipcRenderer.invoke('mcp:memory:get-stats') as Promise<{
+        count: number
+        size: number
+        message?: string
       }>
   }
 }
@@ -476,7 +541,7 @@ const workJournalApi = {
 const api = {
   // File system dialogs
   selectDirectory: () => ipcRenderer.invoke('dialog:select-directory') as Promise<string | null>,
-  
+
   getConversations: () => ipcRenderer.invoke('db:get-conversations'),
   createConversation: (title: string) => ipcRenderer.invoke('db:create-conversation', title),
   deleteConversation: (id: string) => ipcRenderer.invoke('db:delete-conversation', id),

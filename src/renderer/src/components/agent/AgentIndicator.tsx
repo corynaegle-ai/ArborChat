@@ -1,7 +1,17 @@
 // src/renderer/src/components/agent/AgentIndicator.tsx
 
 import { useState } from 'react'
-import { Bot, ChevronUp, ChevronDown, Loader2, CheckCircle2, AlertCircle, Pause, Clock, XCircle } from 'lucide-react'
+import {
+  Bot,
+  ChevronUp,
+  ChevronDown,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  Pause,
+  Clock,
+  XCircle
+} from 'lucide-react'
 import { cn } from '../../lib/utils'
 import type { Agent, AgentStatus } from '../../types/agent'
 
@@ -36,29 +46,31 @@ export function AgentIndicator({ agents, onSelectAgent, activeAgentId }: AgentIn
 
   if (agents.length === 0) return null
 
-  const workingCount = agents.filter(a => a.status === 'running').length
-  const needsAttention = agents.filter(a => a.status === 'waiting').length
+  const workingCount = agents.filter((a) => a.status === 'running').length
+  const needsAttention = agents.filter((a) => a.status === 'waiting').length
   const hasActive = workingCount > 0 || needsAttention > 0
 
   return (
     <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-2">
       {/* Expanded List */}
       {isExpanded && (
-        <div className={cn(
-          'w-72 bg-tertiary/95 backdrop-blur-xl rounded-xl',
-          'border border-violet-500/20 shadow-2xl shadow-black/30',
-          'animate-in slide-in-from-bottom-2 fade-in duration-200',
-          'overflow-hidden'
-        )}>
+        <div
+          className={cn(
+            'w-72 bg-tertiary/95 backdrop-blur-xl rounded-xl',
+            'border border-violet-500/20 shadow-2xl shadow-black/30',
+            'animate-in slide-in-from-bottom-2 fade-in duration-200',
+            'overflow-hidden'
+          )}
+        >
           <div className="p-3 border-b border-secondary/50">
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
               <Bot size={16} className="text-violet-400" />
               Active Agents ({agents.length})
             </h3>
           </div>
-          
+
           <div className="max-h-64 overflow-y-auto">
-            {agents.map(agent => (
+            {agents.map((agent) => (
               <button
                 key={agent.id}
                 onClick={() => {
@@ -105,12 +117,12 @@ export function AgentIndicator({ agents, onSelectAgent, activeAgentId }: AgentIn
           'hover:bg-tertiary'
         )}
       >
-        <div className={cn(
-          'w-6 h-6 rounded-full flex items-center justify-center',
-          hasActive
-            ? 'bg-gradient-to-br from-violet-500 to-purple-600'
-            : 'bg-secondary/80'
-        )}>
+        <div
+          className={cn(
+            'w-6 h-6 rounded-full flex items-center justify-center',
+            hasActive ? 'bg-gradient-to-br from-violet-500 to-purple-600' : 'bg-secondary/80'
+          )}
+        >
           <Bot size={14} className={hasActive ? 'text-white' : 'text-text-muted'} />
         </div>
 

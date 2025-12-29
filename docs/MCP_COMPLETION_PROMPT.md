@@ -5,6 +5,7 @@
 You are Alex Chen, a senior full-stack engineer. You're completing the Desktop Commander MCP integration for ArborChat, an Electron-based threaded AI chat app.
 
 **Tech Stack:**
+
 - Electron + Vite + React + TypeScript
 - Tailwind CSS
 - Better-sqlite3 for local storage
@@ -17,6 +18,7 @@ You are Alex Chen, a senior full-stack engineer. You're completing the Desktop C
 The MCP infrastructure is 95% complete but NOT connected to the chat UI:
 
 ### ✅ Already Built:
+
 1. **Backend MCP System** (`src/main/mcp/`)
    - `manager.ts` - MCP client, connects to servers, executes tools
    - `ipc.ts` - IPC handlers for request/approve/reject
@@ -54,7 +56,7 @@ Edit `src/main/mcp/servers/desktop-commander.ts`:
 export const DESKTOP_COMMANDER_CONFIG: MCPServerConfig = {
   name: 'desktop-commander',
   command: 'npx',
-  args: ['-y', 'desktop-commander'],  // Changed from @anthropic/desktop-commander-mcp
+  args: ['-y', 'desktop-commander'], // Changed from @anthropic/desktop-commander-mcp
   enabled: true,
   env: {}
 }
@@ -92,34 +94,34 @@ ${connected ? systemPrompt : ''}` // Add tool instructions when connected
 // 3. When AI responds with tool_use, parse it
 window.api.onDone(async () => {
   const finalContent = streamBufferRef.current
-  
+
   // Check for tool calls
   const { cleanContent, toolCalls } = processAIResponse(finalContent)
-  
+
   if (toolCalls.length > 0) {
     // Don't save message yet, show approval UI
     setPendingToolCall(toolCalls[0])
   } else {
     // Normal message, save it
     const aiMsg = await window.api.addMessage(activeId, 'assistant', finalContent, parentId)
-    setAllMessages(prev => [...prev, aiMsg])
+    setAllMessages((prev) => [...prev, aiMsg])
   }
 })
 
 // 4. Handle approval
 const handleApprove = async (toolCall) => {
   const result = await executeTool(toolCall.tool, toolCall.args, toolCall.explanation)
-  
+
   // Feed result back to AI
   const toolResultContext = formatToolResult(toolCall.tool, result.result, result.error)
-  
+
   // Continue the conversation with tool result
   const continueContext = [
     ...previousContext,
     { role: 'assistant', content: originalResponse },
-    { role: 'user', content: toolResultContext }  // Tool results as user message
+    { role: 'user', content: toolResultContext } // Tool results as user message
   ]
-  
+
   // Make follow-up request
   window.api.askAI(apiKey, continueContext, selectedModel)
 }
@@ -135,7 +137,7 @@ Add conditional rendering in `MessageBubble`:
   <ToolResultCard ... />
 )}
 
-// If pending approval, render ToolApprovalCard  
+// If pending approval, render ToolApprovalCard
 {pendingToolCall && (
   <ToolApprovalCard
     id={pendingToolCall.id}

@@ -65,13 +65,13 @@ class CredentialManager {
   async getApiKey(providerId: ProviderId): Promise<string | null> {
     const credentials = await this.loadCredentials()
     const cred = credentials.providers[providerId]
-    
+
     if (cred?.apiKey) {
       // Update last used timestamp
       cred.lastUsedAt = new Date().toISOString()
       await this.saveCredentials(credentials)
     }
-    
+
     return cred?.apiKey || null
   }
 
@@ -116,12 +116,12 @@ class CredentialManager {
   async getConfiguredProviders(): Promise<Partial<Record<ProviderId, boolean>>> {
     const credentials = await this.loadCredentials()
     const result: Partial<Record<ProviderId, boolean>> = {}
-    
+
     for (const providerId of Object.keys(credentials.providers) as ProviderId[]) {
       const cred = credentials.providers[providerId]
       result[providerId] = !!(cred?.apiKey && cred.apiKey.length > 0)
     }
-    
+
     return result
   }
 

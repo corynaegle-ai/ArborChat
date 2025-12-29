@@ -1,4 +1,5 @@
 # Phase 1: Agent System Core Infrastructure
+
 ## ArborChat Implementation Prompt
 
 ---
@@ -16,6 +17,7 @@ Implement the core infrastructure for the ArborChat Agent System, enabling users
 ## Phase 1 Deliverables
 
 By the end of this phase, users should be able to:
+
 1. See a "Launch Agent" button next to the thread button on AI messages
 2. Click the button to open an Agent Launch Modal
 3. Configure basic agent settings (name, instructions, permissions)
@@ -27,11 +29,13 @@ By the end of this phase, users should be able to:
 ## Implementation Tasks
 
 ### Task 1: Type Definitions
+
 **File:** `src/renderer/src/types/agent.ts`
 
 Create all TypeScript types as specified in Section 5.2 of the design doc:
+
 - `AgentStatus` union type
-- `AgentToolPermission` union type  
+- `AgentToolPermission` union type
 - `AgentContext` interface
 - `AgentConfig` interface
 - `AgentStep` interface
@@ -39,9 +43,11 @@ Create all TypeScript types as specified in Section 5.2 of the design doc:
 - `AgentState` interface
 
 ### Task 2: Agent Context Provider
+
 **File:** `src/renderer/src/contexts/AgentContext.tsx`
 
 Implement the AgentContext provider as specified in Section 5.3:
+
 - Create reducer with all action types
 - Implement `AgentProvider` component
 - Export `useAgentContext` hook
@@ -50,17 +56,21 @@ Implement the AgentContext provider as specified in Section 5.3:
 - Include computed getters (getAgent, getActiveAgent, getPendingApprovals, getRunningAgents)
 
 ### Task 3: Agent Launch Button
+
 **File:** `src/renderer/src/components/agents/AgentLaunchButton.tsx`
 
 Create the launch button component as specified in Section 8.1:
+
 - Use Lucide `Bot` icon
 - Match existing message action button styling
 - Accept `onLaunch` and `disabled` props
 
 ### Task 4: Agent Launch Modal
+
 **File:** `src/renderer/src/components/agents/AgentLaunchModal.tsx`
 
 Create the configuration modal as specified in Section 4.2:
+
 - Agent name input
 - Task instructions textarea
 - Context seeding checkboxes:
@@ -76,9 +86,11 @@ Create the configuration modal as specified in Section 4.2:
 - Cancel and Launch buttons
 
 ### Task 5: Agent Panel Shell
+
 **File:** `src/renderer/src/components/agents/AgentPanel.tsx`
 
 Create the basic panel structure as specified in Section 8.2:
+
 - Fixed width (480px) side panel
 - Header area (placeholder for AgentHeader)
 - Messages area (placeholder for AgentMessages)
@@ -86,14 +98,17 @@ Create the basic panel structure as specified in Section 8.2:
 - Minimize and close functionality
 
 ### Task 6: Agent Status Badge
+
 **File:** `src/renderer/src/components/agents/AgentStatusBadge.tsx`
 
 Create the status indicator as specified in Section 8.4:
+
 - Visual indicator for each status (created, running, waiting, paused, completed, failed)
 - Pulsing animation for running state
 - Color-coded labels
 
 ### Task 7: Barrel Exports
+
 **File:** `src/renderer/src/components/agents/index.ts`
 
 Create barrel exports for all agent components.
@@ -101,13 +116,16 @@ Create barrel exports for all agent components.
 ### Task 8: Integration Points
 
 **Update `src/renderer/src/App.tsx`:**
+
 - Wrap app with `AgentProvider`
 
 **Update message actions (find existing component):**
+
 - Add `AgentLaunchButton` next to thread button
 - Wire up modal open state
 
 **Update main layout:**
+
 - Add `AgentPanel` to layout (conditionally rendered based on `isPanelOpen`)
 
 ---
@@ -115,21 +133,24 @@ Create barrel exports for all agent components.
 ## Technical Requirements
 
 ### Styling
+
 - Use existing Tailwind CSS patterns
 - Match dark theme (zinc-900, zinc-700 borders, etc.)
 - Use Lucide React icons consistently
 - Follow existing component patterns in the codebase
 
 ### State Management
+
 - Use React Context + useReducer pattern (matching existing patterns)
 - Generate unique IDs using existing utility or create one
 
 ### Imports to Reference
+
 ```typescript
 // Existing patterns to follow
-import { Message } from '../types/chat';
-import { Persona } from '../types/persona';
-import { useMCP } from '../hooks/useMCP';
+import { Message } from '../types/chat'
+import { Persona } from '../types/persona'
+import { useMCP } from '../hooks/useMCP'
 ```
 
 ---
@@ -192,6 +213,6 @@ src/renderer/src/
 
 ---
 
-*Estimated Time: 4-6 hours*
+_Estimated Time: 4-6 hours_
 
-*After completing Phase 1, proceed to Phase 2: Agent Execution Engine*
+_After completing Phase 1, proceed to Phase 2: Agent Execution Engine_

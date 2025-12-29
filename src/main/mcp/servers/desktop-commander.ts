@@ -4,7 +4,7 @@ import { MCPServerConfig } from '../types'
 
 /**
  * Desktop Commander MCP Server Configuration
- * 
+ *
  * Desktop Commander provides file system operations, process management,
  * and terminal execution capabilities through MCP.
  */
@@ -34,12 +34,7 @@ export const TOOL_CATEGORIES: Record<string, string[]> = {
     'get_file_info',
     'edit_block'
   ],
-  search: [
-    'start_search',
-    'get_more_search_results',
-    'stop_search',
-    'list_searches'
-  ],
+  search: ['start_search', 'get_more_search_results', 'stop_search', 'list_searches'],
   process: [
     'start_process',
     'read_process_output',
@@ -49,17 +44,12 @@ export const TOOL_CATEGORIES: Record<string, string[]> = {
     'list_processes',
     'kill_process'
   ],
-  config: [
-    'get_config',
-    'set_config_value',
-    'get_usage_stats',
-    'get_recent_tool_calls'
-  ]
+  config: ['get_config', 'set_config_value', 'get_usage_stats', 'get_recent_tool_calls']
 }
 
 /**
  * Risk levels for each Desktop Commander tool
- * 
+ *
  * - safe: Read-only operations, no side effects
  * - moderate: Write operations in user directories
  * - dangerous: System-wide effects, process termination, config changes

@@ -12,7 +12,15 @@ interface MCPCredentials {
     tokenScopes?: string[]
     createdAt: string
   }
-  // Future: Add other server credentials here
+  ssh?: {
+    host: string
+    port: number
+    username: string
+    authType: 'password' | 'key'
+    password?: string
+    keyPath?: string
+    createdAt: string
+  }
 }
 
 /**
@@ -126,4 +134,82 @@ export async function isGitHubConfigured(): Promise<boolean> {
 export async function getGitHubTokenCreatedAt(): Promise<string | undefined> {
   const credentials = await loadCredentials()
   return credentials.github?.createdAt
+}
+
+// =====================
+// SSH Credential Functions
+// =====================
+
+export interface SSHCredentials {
+  host: string
+  port: number
+  username: string
+  authType: 'password' | 'key'
+  password?: string
+  keyPath?: string
+}
+
+/**
+ * Save SSH credentials securely
+ */
+export async function saveSSHCredentials(creds: SSHCredentials): Promise<void> {
+  if (!isSecureStorageAvailable()) {
+    throw new Error('Secure storage is not available on this system')
+  }
+
+  const credentials = await loadCredentials()
+
+  credentials.ssh = {
+    ...creds,
+    createdAt: new Date().toISOString()
+  }
+
+  await saveCredentials(credentials)
+  console.log('[Credentials] SSH credentials saved securely')
+}
+
+/**
+ * Retrieve SSH credentials
+ * @returns The stored SSH credentials or null if not configured
+ */
+export async function getSSHCredentials(): Promise<SSHCredentials | null> {
+  const credentials = await loadCredentials()
+  if (!credentials.ssh) return null
+
+  return {
+    host: credentials.ssh.host,
+    port: credentials.ssh.port,
+    username: credentials.ssh.username,
+    authType: credentials.ssh.authType,
+    password: credentials.ssh.password,
+    keyPath: credentials.ssh.keyPath
+  }
+}
+
+/**
+ * Delete SSH credentials
+ */
+export async function deleteSSHCredentials(): Promise<void> {
+  const credentials = await loadCredentials()
+  delete credentials.ssh
+  await saveCredentials(credentials)
+  console.log('[Credentials] SSH credentials deleted')
+}
+
+/**
+ * Check if SSH is configured
+ * @returns True if SSH credentials are stored
+ */
+export async function isSSHConfigured(): Promise<boolean> {
+  const creds = await getSSHCredentials()
+  return creds !== null
+}
+
+/**
+ * Get the creation date of the stored SSH credentials
+ * @returns ISO date string or undefined if not configured
+ */
+export async function getSSHCredentialsCreatedAt(): Promise<string | undefined> {
+  const credentials = await loadCredentials()
+  return credentials.ssh?.createdAt
 }

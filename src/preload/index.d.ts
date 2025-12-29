@@ -82,6 +82,36 @@ interface GitHubAPI {
   getStatus: () => Promise<GitHubStatus>
 }
 
+// SSH-specific types
+interface SSHCredentials {
+  host: string
+  port: number
+  username: string
+  authType: 'password' | 'key'
+  password?: string
+  keyPath?: string
+}
+
+interface SSHStatus {
+  isConfigured: boolean
+  isConnected: boolean
+  toolCount: number
+  host?: string
+  username?: string
+}
+
+interface SSHConfigureResult {
+  success: boolean
+  error?: string
+}
+
+interface SSHAPI {
+  isConfigured: () => Promise<boolean>
+  configure: (creds: SSHCredentials) => Promise<SSHConfigureResult>
+  disconnect: () => Promise<{ success: boolean }>
+  getStatus: () => Promise<SSHStatus>
+}
+
 // Persona Types
 interface PersonaMetadata {
   id: string
@@ -312,10 +342,14 @@ interface MCPAPI {
     serverName: string,
     toolName: string,
     args: Record<string, unknown>,
-    explanation?: string
+    explanation?: string,
+    skipApproval?: boolean
   ) => Promise<MCPToolResult>
   approve: (id: string, modifiedArgs?: Record<string, unknown>) => Promise<MCPToolResult>
-  alwaysApprove: (id: string, modifiedArgs?: Record<string, unknown>) => Promise<MCPToolResult & { alwaysApproved?: boolean }>
+  alwaysApprove: (
+    id: string,
+    modifiedArgs?: Record<string, unknown>
+  ) => Promise<MCPToolResult & { alwaysApproved?: boolean }>
   reject: (id: string) => Promise<{ rejected: boolean }>
   getPending: () => Promise<MCPPendingCall[]>
   cancelPending: (id: string) => Promise<{ cancelled: boolean }>
@@ -330,6 +364,23 @@ interface MCPAPI {
   removeAllListeners: () => void
   // GitHub-specific API
   github: GitHubAPI
+  // SSH-specific API
+  ssh: SSHAPI
+  // Filesystem-specific API
+  filesystem: {
+    selectDirectory: () => Promise<string | null>
+    getAllowedDirectory: () => Promise<string | null>
+    setAllowedDirectory: (directory: string) => Promise<void>
+  }
+  // Brave Search-specific API
+  braveSearch: {
+    validateKey: (apiKey: string) => Promise<{ valid: boolean; error?: string }>
+  }
+  // Memory-specific API
+  memory: {
+    clearAll: () => Promise<{ success: boolean; message?: string }>
+    getStats: () => Promise<{ count: number; size: number; message?: string }>
+  }
 }
 
 declare global {
@@ -338,7 +389,7 @@ declare global {
     api: {
       // Dialog APIs
       selectDirectory: () => Promise<string | null>
-      
+
       getConversations: () => Promise<import('../renderer/src/types').Conversation[]>
       createConversation: (title: string) => Promise<import('../renderer/src/types').Conversation>
       deleteConversation: (id: string) => Promise<void>
@@ -392,6 +443,10 @@ export type {
   GitHubStatus,
   GitHubConfigureResult,
   GitHubAPI,
+  SSHCredentials,
+  SSHStatus,
+  SSHConfigureResult,
+  SSHAPI,
   CredentialsAPI,
   GitRepoInfo,
   GitChangedFile,

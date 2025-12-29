@@ -11,13 +11,13 @@ async function convertToIco() {
   try {
     console.log('Converting PNG to ICO...')
     const icoBuffer = await pngToIco(sourcePng)
-    
+
     fs.writeFileSync(outputIco, icoBuffer)
     console.log('✓ Created:', outputIco)
-    
+
     fs.writeFileSync(buildIco, icoBuffer)
     console.log('✓ Created:', buildIco)
-    
+
     console.log('Done!')
   } catch (error) {
     console.error('Error:', error.message)

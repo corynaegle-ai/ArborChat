@@ -3,21 +3,21 @@
 /**
  * Agent Status - Represents the current state of an agent
  */
-export type AgentStatus = 
-  | 'created'         // Agent initialized, awaiting first run
-  | 'running'         // Actively processing/generating
-  | 'waiting'         // Agent needs user input or tool approval
-  | 'paused'          // Agent is paused by user
-  | 'completed'       // Agent finished its task
-  | 'failed'          // Agent encountered an error
+export type AgentStatus =
+  | 'created' // Agent initialized, awaiting first run
+  | 'running' // Actively processing/generating
+  | 'waiting' // Agent needs user input or tool approval
+  | 'paused' // Agent is paused by user
+  | 'completed' // Agent finished its task
+  | 'failed' // Agent encountered an error
 
 /**
  * Agent Tool Permission - Controls auto-approval behavior
  */
-export type AgentToolPermission = 
-  | 'standard'      // Auto-approve safe, require approval for moderate+dangerous
-  | 'restricted'    // Require approval for all tool operations
-  | 'autonomous'    // Auto-approve safe+moderate, only require approval for dangerous
+export type AgentToolPermission =
+  | 'standard' // Auto-approve safe, require approval for moderate+dangerous
+  | 'restricted' // Require approval for all tool operations
+  | 'autonomous' // Auto-approve safe+moderate, only require approval for dangerous
 
 /**
  * Tool Risk Level - Categorization of tool operations
@@ -49,10 +49,10 @@ export interface GitContext {
 export interface AgentContext {
   includeCurrentMessage: boolean
   includeParentContext: boolean
-  parentContextDepth: number       // How many parent messages to include
+  parentContextDepth: number // How many parent messages to include
   includeFullConversation: boolean
   includePersona: boolean
-  seedMessages: AgentMessage[]     // Computed seed messages
+  seedMessages: AgentMessage[] // Computed seed messages
   workingDirectory: string
   gitContext?: GitContext          // Git-specific context for code agents
 }
@@ -106,16 +106,16 @@ export interface Agent {
   id: string
   config: AgentConfig
   status: AgentStatus
-  
+
   // Conversation history
   messages: AgentMessage[]
   steps: AgentStep[]
   systemPrompt: string
-  
+
   // Execution state
   currentStepIndex: number
-  pendingApprovals: string[]       // Step IDs waiting for approval
-  
+  pendingApprovals: string[] // Step IDs waiting for approval
+
   // Active tool call (for UI)
   pendingToolCall?: {
     id: string
@@ -125,19 +125,19 @@ export interface Agent {
     originalContent: string
     cleanContent: string
   } | null
-  
+
   // Timestamps
   createdAt: number
   startedAt?: number
   completedAt?: number
-  
+
   // Progress tracking
   stepsCompleted: number
   estimatedStepsRemaining?: number
-  
+
   // Error state
   error?: string
-  
+
   // Source reference
   sourceConversationId: string
   sourceMessageId?: string
@@ -191,7 +191,7 @@ export interface AgentSummary {
 /**
  * Agent Event Types - For real-time updates
  */
-export type AgentEventType = 
+export type AgentEventType =
   | 'status_changed'
   | 'message_added'
   | 'message_updated'
