@@ -288,8 +288,6 @@ const mcpApi = {
         message?: string
       }>
   }
-      }>
-  }
 }
 
 // Custom APIs for renderer
