@@ -163,10 +163,95 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
   const isExecutingRef = useRef(false)
   const pendingToolResultRef = useRef<string | null>(null)
   
+  // Track executed tools for completion verification
+  // This prevents hallucinated completions - agent must actually use tools
+  const executedToolsRef = useRef<Array<{
+    tool: string
+    args: Record<string, unknown>
+    success: boolean
+    timestamp: number
+  }>>([])
+  
+  /**
+   * Tools that constitute "meaningful work" for completion verification
+   * Read-only tools don't count as work accomplished
+   */
+  const WORK_TOOLS = new Set([
+    'write_file',
+    'edit_block', 
+    'str_replace',
+    'create_directory',
+    'move_file',
+    'start_process',      // Could be git commit, npm commands, etc.
+    'interact_with_process'
+  ])
+  
   // Get agent helper
   const getAgentSafe = useCallback((): Agent | null => {
     return getAgent(agentId) || null
   }, [agentId, getAgent])
+
+  /**
+   * Record a tool execution for completion verification
+   */
+  const recordToolExecution = useCallback((
+    tool: string,
+    args: Record<string, unknown>,
+    success: boolean
+  ) => {
+    executedToolsRef.current.push({
+      tool,
+      args,
+      success,
+      timestamp: Date.now()
+    })
+    console.log(`[AgentRunner] Recorded tool execution: ${tool} (success: ${success})`)
+  }, [])
+
+  /**
+   * Reset tool execution tracking (called when agent starts)
+   */
+  const resetToolTracking = useCallback(() => {
+    executedToolsRef.current = []
+    console.log('[AgentRunner] Reset tool execution tracking')
+  }, [])
+
+  /**
+   * Check if agent has done meaningful work via tool execution
+   * 
+   * Returns an object with:
+   * - hasMeaningfulWork: boolean - whether work-producing tools were used successfully
+   * - workToolsUsed: string[] - list of work tools that succeeded
+   * - totalToolCalls: number - total tools called
+   * - successfulWorkCalls: number - successful work tool calls
+   */
+  const verifyWorkCompleted = useCallback((): {
+    hasMeaningfulWork: boolean
+    workToolsUsed: string[]
+    totalToolCalls: number
+    successfulWorkCalls: number
+  } => {
+    const executions = executedToolsRef.current
+    const totalToolCalls = executions.length
+    
+    // Filter to successful work tool executions
+    const successfulWorkExecutions = executions.filter(
+      exec => exec.success && WORK_TOOLS.has(exec.tool)
+    )
+    
+    const workToolsUsed = [...new Set(successfulWorkExecutions.map(e => e.tool))]
+    const successfulWorkCalls = successfulWorkExecutions.length
+    
+    console.log(`[AgentRunner] Work verification: ${successfulWorkCalls}/${totalToolCalls} tool calls were successful work operations`)
+    console.log(`[AgentRunner] Work tools used: ${workToolsUsed.join(', ') || 'none'}`)
+    
+    return {
+      hasMeaningfulWork: successfulWorkCalls > 0,
+      workToolsUsed,
+      totalToolCalls,
+      successfulWorkCalls
+    }
+  }, [])
 
   /**
    * Helper: Maybe create checkpoint if entry count threshold reached
@@ -539,6 +624,9 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
           }
         }
         
+        // Record tool execution for completion verification
+        recordToolExecution(toolCall.tool, toolCall.args, result.success)
+        
         // Update step with result
         updateAgentStep(agentId, step.id, {
           toolCall: {
@@ -599,6 +687,9 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
           timestamp: Date.now()
         })
         
+        // Record failed tool execution for completion verification
+        recordToolExecution(toolCall.tool, toolCall.args, false)
+        
         updateAgentStatus(agentId, 'failed', errorMsg)
         setRunnerState(prev => ({ ...prev, isRunning: false, error: errorMsg }))
         isExecutingRef.current = false
@@ -622,7 +713,7 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
       setRunnerState(prev => ({ ...prev, isRunning: false }))
       isExecutingRef.current = false
     }
-  }, [agentId, addAgentStep, updateAgentStep, updateAgentStatus, setPendingTool, executeLoop, logToolRequest, logToolResult, logError, detectAndLogFileOperations, maybeCreateCheckpoint])
+  }, [agentId, addAgentStep, updateAgentStep, updateAgentStatus, setPendingTool, executeLoop, logToolRequest, logToolResult, logError, detectAndLogFileOperations, maybeCreateCheckpoint, recordToolExecution])
 
   /**
    * Internal tool execution
@@ -642,21 +733,48 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
   /**
    * Check if message indicates task completion
    * 
-   * Now requires more explicit completion signals to prevent premature
-   * completion claims without actual tool-based work evidence.
+   * RUNTIME VERIFICATION: Prevents hallucinated completions by requiring:
+   * 1. Explicit "TASK COMPLETED" signal in message
+   * 2. File path evidence in the completion message
+   * 3. Actual successful tool executions tracked at runtime
+   * 
+   * This triple-check ensures agents can't claim completion without proof.
    */
   const isCompletionMessage = useCallback((content: string): boolean => {
-    // Only recognize explicit TASK COMPLETED with file evidence
-    // The agent is instructed to list files when completing, so we check for that pattern
+    // Check 1: Explicit completion signal
     const hasExplicitCompletion = /TASK COMPLETED/i.test(content)
+    if (!hasExplicitCompletion) {
+      return false
+    }
     
-    // Look for evidence of actual work (file paths mentioned)
+    // Check 2: File path evidence in message
     const hasFileEvidence = /(?:\/[\w.-]+)+\.(ts|tsx|js|jsx|json|md|css|html)/i.test(content)
+    if (!hasFileEvidence) {
+      console.warn('[AgentRunner] Completion claimed but no file paths mentioned')
+      return false
+    }
     
-    // Require both the completion signal AND file evidence
-    // This prevents hallucinated completions without actual tool work
-    return hasExplicitCompletion && hasFileEvidence
-  }, [])
+    // Check 3: Runtime verification - did agent actually execute work tools?
+    const workVerification = verifyWorkCompleted()
+    if (!workVerification.hasMeaningfulWork) {
+      console.warn('[AgentRunner] HALLUCINATION DETECTED: Agent claimed completion but executed NO work tools!')
+      console.warn(`[AgentRunner] Total tool calls: ${workVerification.totalToolCalls}, Successful work calls: ${workVerification.successfulWorkCalls}`)
+      
+      // Add a warning step to the agent's execution history
+      addAgentStep(agentId, {
+        type: 'error',
+        content: `⚠️ Completion verification failed: No work-producing tools (write_file, edit_block, etc.) were successfully executed. The agent may have hallucinated actions.`,
+        timestamp: Date.now()
+      })
+      
+      return false
+    }
+    
+    console.log(`[AgentRunner] Completion verified: ${workVerification.successfulWorkCalls} work operations completed`)
+    console.log(`[AgentRunner] Tools used: ${workVerification.workToolsUsed.join(', ')}`)
+    
+    return true
+  }, [verifyWorkCompleted, addAgentStep, agentId])
 
   /**
    * Perform cleanup (for crash scenarios)
@@ -697,6 +815,9 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
     const agent = getAgentSafe()
     if (!agent) return
     
+    // Reset tool execution tracking for fresh start
+    resetToolTracking()
+    
     // Create work journal session
     if (!workSessionIdRef.current) {
       try {
@@ -718,7 +839,7 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
     }
     
     await executeLoop()
-  }, [getAgentSafe, mcpConnected, executeLoop, createSession])
+  }, [getAgentSafe, mcpConnected, executeLoop, createSession, resetToolTracking])
 
   /**
    * Pause agent execution
@@ -859,6 +980,9 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
         }
       }
       
+      // Record tool execution for completion verification (manual approval flow)
+      recordToolExecution(toolCall.tool, args, result.success)
+      
       // Update step with result
       if (pendingStep) {
         updateAgentStep(agentId, pendingStep.id, {
@@ -914,10 +1038,13 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
         timestamp: Date.now()
       })
       
+      // Record failed tool execution for completion verification (manual approval flow)
+      recordToolExecution(toolCall.tool, args, false)
+      
       updateAgentStatus(agentId, 'failed', errorMsg)
       setRunnerState(prev => ({ ...prev, isRunning: false, error: errorMsg }))
     }
-  }, [agentId, getAgentSafe, updateAgentStep, addAgentStep, setPendingTool, executeToolInternal, executeLoop, updateAgentStatus, logToolResult, logError, detectAndLogFileOperations, maybeCreateCheckpoint])
+  }, [agentId, getAgentSafe, updateAgentStep, addAgentStep, setPendingTool, executeToolInternal, executeLoop, updateAgentStatus, logToolResult, logError, detectAndLogFileOperations, maybeCreateCheckpoint, recordToolExecution])
 
   /**
    * Reject a pending tool call
