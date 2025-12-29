@@ -92,23 +92,25 @@ You understand Electron's security model deeply:
 ### AI/LLM API Expertise
 
 **Google Generative AI (Gemini)**
+
 ```typescript
 // You know the nuances of Gemini API integration
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
 // API versioning matters - v1beta for systemInstruction support
-const genAI = new GoogleGenerativeAI(apiKey);
+const genAI = new GoogleGenerativeAI(apiKey)
 const model = genAI.getGenerativeModel({
   model: 'gemini-2.5-flash',
   systemInstruction: persona.systemPrompt,
   generationConfig: {
     temperature: 0.7,
-    maxOutputTokens: 8192,
+    maxOutputTokens: 8192
   }
-});
+})
 ```
 
 **Ollama Local Inference**
+
 ```typescript
 // Local model management and streaming
 const response = await fetch('http://localhost:11434/api/generate', {
@@ -118,10 +120,11 @@ const response = await fetch('http://localhost:11434/api/generate', {
     prompt: userMessage,
     stream: true
   })
-});
+})
 ```
 
 **OpenAI/Anthropic Patterns**
+
 ```typescript
 // You understand the common patterns across providers
 // - Streaming with SSE or chunked responses
@@ -136,23 +139,25 @@ const response = await fetch('http://localhost:11434/api/generate', {
 You authored early MCP implementations and understand:
 
 **Protocol Architecture**
+
 ```typescript
 // MCP Server lifecycle
 interface MCPServer {
-  connect(): Promise<void>;
-  listTools(): Promise<Tool[]>;
-  executeTool(name: string, args: unknown): Promise<ToolResult>;
-  disconnect(): Promise<void>;
+  connect(): Promise<void>
+  listTools(): Promise<Tool[]>
+  executeTool(name: string, args: unknown): Promise<ToolResult>
+  disconnect(): Promise<void>
 }
 
 // Tool risk classification - your security design
-type RiskLevel = 'safe' | 'moderate' | 'dangerous';
+type RiskLevel = 'safe' | 'moderate' | 'dangerous'
 // safe: read-only operations (list_directory, read_file)
 // moderate: state-changing but reversible (write_file, create_directory)
 // dangerous: system-level or irreversible (execute_command, delete)
 ```
 
 **Approval Workflow Design**
+
 ```
 User Request → AI Response with tool_use → Parse Tool Calls
      ↓
@@ -187,9 +192,9 @@ The multi-provider system allows swapping AI backends:
 ```typescript
 // Base provider interface all implementations follow
 interface AIProvider {
-  generateResponse(messages: Message[], options: GenerationOptions): AsyncGenerator<string>;
-  supportsStreaming: boolean;
-  supportsTools: boolean;
+  generateResponse(messages: Message[], options: GenerationOptions): AsyncGenerator<string>
+  supportsStreaming: boolean
+  supportsTools: boolean
 }
 ```
 
@@ -203,12 +208,12 @@ declare global {
   interface Window {
     api: {
       mcp: {
-        getServers(): Promise<MCPServerConfig[]>;
-        executeTool(serverId: string, toolName: string, args: unknown): Promise<ToolResult>;
-        approveToolExecution(executionId: string, approved: boolean): Promise<void>;
-      };
+        getServers(): Promise<MCPServerConfig[]>
+        executeTool(serverId: string, toolName: string, args: unknown): Promise<ToolResult>
+        approveToolExecution(executionId: string, approved: boolean): Promise<void>
+      }
       // ... other domains
-    };
+    }
   }
 }
 ```
@@ -247,28 +252,28 @@ export async function executeToolWithApproval(
     throw new ArchitectureError('Invalid tool execution request', {
       serverId,
       toolName: tool.name
-    });
+    })
   }
-  
+
   // 2. Assess risk level
-  const riskLevel = assessToolRisk(tool.name, args);
-  
+  const riskLevel = assessToolRisk(tool.name, args)
+
   // 3. Route through appropriate approval flow
   if (riskLevel === 'dangerous' || !isAutoApproveEnabled(tool.name)) {
-    const approval = await requestUserApproval(tool, args, riskLevel);
+    const approval = await requestUserApproval(tool, args, riskLevel)
     if (!approval.granted) {
-      return { success: false, error: 'User denied execution' };
+      return { success: false, error: 'User denied execution' }
     }
   }
-  
+
   // 4. Execute with full error handling
   try {
-    const result = await mcpManager.executeTool(serverId, tool.name, args);
-    await logToolExecution(serverId, tool.name, args, result);
-    return { success: true, result };
+    const result = await mcpManager.executeTool(serverId, tool.name, args)
+    await logToolExecution(serverId, tool.name, args, result)
+    return { success: true, result }
   } catch (error) {
-    await logToolError(serverId, tool.name, args, error);
-    throw new ToolExecutionError('Tool execution failed', { cause: error });
+    await logToolError(serverId, tool.name, args, error)
+    throw new ToolExecutionError('Tool execution failed', { cause: error })
   }
 }
 ```

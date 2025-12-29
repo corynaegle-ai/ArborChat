@@ -128,18 +128,8 @@ export const GITHUB_TOOL_CATEGORIES: Record<string, string[]> = {
     'fork_repository',
     'create_branch'
   ],
-  files: [
-    'create_or_update_file',
-    'push_files',
-    'get_file_contents'
-  ],
-  issues: [
-    'create_issue',
-    'list_issues',
-    'update_issue',
-    'add_issue_comment',
-    'search_issues'
-  ],
+  files: ['create_or_update_file', 'push_files', 'get_file_contents'],
+  issues: ['create_issue', 'list_issues', 'update_issue', 'add_issue_comment', 'search_issues'],
   pullRequests: [
     'create_pull_request',
     'list_pull_requests',
@@ -149,16 +139,8 @@ export const GITHUB_TOOL_CATEGORIES: Record<string, string[]> = {
     'get_pull_request_reviews',
     'update_pull_request_branch'
   ],
-  search: [
-    'search_code',
-    'search_issues',
-    'search_repositories',
-    'search_users'
-  ],
-  users: [
-    'get_me',
-    'search_users'
-  ]
+  search: ['search_code', 'search_issues', 'search_repositories', 'search_users'],
+  users: ['get_me', 'search_users']
 }
 ```
 
@@ -246,20 +228,17 @@ export function getGitHubCategoryDescription(category: string): string {
  * Required PAT scopes for full GitHub MCP functionality
  */
 export const REQUIRED_GITHUB_SCOPES = [
-  'repo',           // Full control of private repositories
-  'public_repo',    // Access public repositories (alternative to 'repo')
-  'read:org',       // Read organization data
-  'read:user',      // Read user profile data
-  'workflow'        // Update GitHub Actions workflows (optional)
+  'repo', // Full control of private repositories
+  'public_repo', // Access public repositories (alternative to 'repo')
+  'read:org', // Read organization data
+  'read:user', // Read user profile data
+  'workflow' // Update GitHub Actions workflows (optional)
 ]
 
 /**
  * Minimum PAT scopes for read-only access
  */
-export const READONLY_GITHUB_SCOPES = [
-  'public_repo',
-  'read:user'
-]
+export const READONLY_GITHUB_SCOPES = ['public_repo', 'read:user']
 ```
 
 ---
@@ -406,7 +385,7 @@ ipcMain.handle('mcp:github:configure', async (_, { token }: { token: string }) =
 
     // Enable and connect the GitHub server
     const config = loadMCPConfig()
-    const githubServer = config.servers.find(s => s.name === 'github')
+    const githubServer = config.servers.find((s) => s.name === 'github')
     if (githubServer) {
       githubServer.enabled = true
       githubServer.env = {
@@ -440,7 +419,7 @@ ipcMain.handle('mcp:github:disconnect', async () => {
   await mcpManager.disconnectServer('github')
 
   const config = loadMCPConfig()
-  const githubServer = config.servers.find(s => s.name === 'github')
+  const githubServer = config.servers.find((s) => s.name === 'github')
   if (githubServer) {
     githubServer.enabled = false
   }
@@ -475,8 +454,8 @@ async function validateGitHubToken(token: string): Promise<boolean> {
   try {
     const response = await fetch('https://api.github.com/user', {
       headers: {
-        'Authorization': `token ${token}`,
-        'Accept': 'application/vnd.github.v3+json',
+        Authorization: `token ${token}`,
+        Accept: 'application/vnd.github.v3+json',
         'User-Agent': 'ArborChat-MCP'
       }
     })
@@ -511,7 +490,7 @@ export const DEFAULT_MCP_CONFIG: MCPConfig = {
   timeout: 300000,
   servers: [
     DESKTOP_COMMANDER_CONFIG,
-    GITHUB_MCP_CONFIG  // Add GitHub server (disabled by default)
+    GITHUB_MCP_CONFIG // Add GitHub server (disabled by default)
   ]
 }
 ```
@@ -570,8 +549,8 @@ export interface MCPServerConfig {
   args: string[]
   enabled: boolean
   env?: Record<string, string>
-  requiresAuth?: boolean  // NEW: Indicates if server needs authentication
-  authType?: 'pat' | 'oauth' | 'api-key'  // NEW: Type of authentication
+  requiresAuth?: boolean // NEW: Indicates if server needs authentication
+  authType?: 'pat' | 'oauth' | 'api-key' // NEW: Type of authentication
 }
 ```
 
@@ -604,6 +583,7 @@ export function GitHubSettings({}: GitHubSettingsProps) {
 ```
 
 Key UI Elements:
+
 1. **Status Indicator**: Shows if GitHub is connected
 2. **Token Input**: Secure password field for PAT entry
 3. **Help Link**: Direct link to GitHub's PAT creation page
@@ -618,7 +598,7 @@ Update `ToolApprovalCard` to show GitHub-specific context:
 // Add GitHub-specific icon and styling
 const TOOL_ICONS: Record<string, typeof Terminal> = {
   // ... existing icons ...
-  
+
   // GitHub tools
   create_issue: AlertCircle,
   create_pull_request: GitPullRequest,
@@ -687,10 +667,12 @@ async function initializeGitHubServer(): Promise<void> {
 ### Rate Limiting
 
 GitHub API has rate limits:
+
 - Authenticated: 5,000 requests/hour
 - Unauthenticated: 60 requests/hour
 
 Consider implementing:
+
 - Request counting
 - Rate limit headers monitoring
 - User warnings when approaching limits
@@ -750,6 +732,7 @@ describe('GitHub MCP E2E', () => {
 ## 14. Implementation Phases
 
 ### Phase 1: Foundation (MVP)
+
 - [ ] Create `src/main/mcp/servers/github.ts` with config and risk levels
 - [ ] Create `src/main/mcp/credentials.ts` for secure token storage
 - [ ] Update `config.ts` to include GitHub server
@@ -757,18 +740,21 @@ describe('GitHub MCP E2E', () => {
 - [ ] Basic connection/disconnection flow
 
 ### Phase 2: UI Integration
+
 - [ ] Create GitHub settings panel
 - [ ] Add GitHub status indicator to MCP status
 - [ ] Update tool approval cards with GitHub icons
 - [ ] Add GitHub connection wizard
 
 ### Phase 3: Enhanced Features
+
 - [ ] Token scope detection and warnings
 - [ ] Rate limit monitoring
 - [ ] GitHub Actions workflow integration
 - [ ] Pull request review tools
 
 ### Phase 4: Polish
+
 - [ ] Error handling improvements
 - [ ] Logging and debugging tools
 - [ ] Documentation and help text
@@ -781,11 +767,13 @@ describe('GitHub MCP E2E', () => {
 ### Required
 
 Already in project:
+
 - `@modelcontextprotocol/sdk` - MCP client
 
 ### New (Optional)
 
 For enhanced features:
+
 - `@octokit/rest` - Type-safe GitHub API client (optional, for token validation)
 
 ---
@@ -794,9 +782,9 @@ For enhanced features:
 
 ### Environment Variables
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `GITHUB_PERSONAL_ACCESS_TOKEN` | GitHub PAT with required scopes | Yes |
+| Variable                       | Description                     | Required |
+| ------------------------------ | ------------------------------- | -------- |
+| `GITHUB_PERSONAL_ACCESS_TOKEN` | GitHub PAT with required scopes | Yes      |
 
 ### MCP Config Entry
 
@@ -840,62 +828,62 @@ For enhanced features:
 
 ### Repository Tools
 
-| Tool | Description | Risk |
-|------|-------------|------|
-| `search_repositories` | Search for GitHub repositories | Safe |
-| `create_repository` | Create a new repository | Dangerous |
-| `get_file_contents` | Get file/directory contents | Safe |
-| `fork_repository` | Fork a repository | Dangerous |
+| Tool                  | Description                    | Risk      |
+| --------------------- | ------------------------------ | --------- |
+| `search_repositories` | Search for GitHub repositories | Safe      |
+| `create_repository`   | Create a new repository        | Dangerous |
+| `get_file_contents`   | Get file/directory contents    | Safe      |
+| `fork_repository`     | Fork a repository              | Dangerous |
 
 ### File Tools
 
-| Tool | Description | Risk |
-|------|-------------|------|
+| Tool                    | Description             | Risk     |
+| ----------------------- | ----------------------- | -------- |
 | `create_or_update_file` | Create or update a file | Moderate |
-| `push_files` | Push multiple files | Moderate |
+| `push_files`            | Push multiple files     | Moderate |
 
 ### Issue Tools
 
-| Tool | Description | Risk |
-|------|-------------|------|
-| `create_issue` | Create a new issue | Moderate |
-| `list_issues` | List issues with filters | Safe |
-| `update_issue` | Update an existing issue | Moderate |
-| `add_issue_comment` | Add comment to issue | Moderate |
-| `search_issues` | Search issues/PRs | Safe |
+| Tool                | Description              | Risk     |
+| ------------------- | ------------------------ | -------- |
+| `create_issue`      | Create a new issue       | Moderate |
+| `list_issues`       | List issues with filters | Safe     |
+| `update_issue`      | Update an existing issue | Moderate |
+| `add_issue_comment` | Add comment to issue     | Moderate |
+| `search_issues`     | Search issues/PRs        | Safe     |
 
 ### Pull Request Tools
 
-| Tool | Description | Risk |
-|------|-------------|------|
-| `create_pull_request` | Create a new PR | Moderate |
-| `get_pull_request` | Get PR details | Safe |
-| `get_pull_request_diff` | Get PR diff | Safe |
-| `merge_pull_request` | Merge a PR | Dangerous |
-| `update_pull_request_branch` | Update PR branch | Moderate |
+| Tool                         | Description      | Risk      |
+| ---------------------------- | ---------------- | --------- |
+| `create_pull_request`        | Create a new PR  | Moderate  |
+| `get_pull_request`           | Get PR details   | Safe      |
+| `get_pull_request_diff`      | Get PR diff      | Safe      |
+| `merge_pull_request`         | Merge a PR       | Dangerous |
+| `update_pull_request_branch` | Update PR branch | Moderate  |
 
 ### Branch Tools
 
-| Tool | Description | Risk |
-|------|-------------|------|
+| Tool            | Description         | Risk     |
+| --------------- | ------------------- | -------- |
 | `create_branch` | Create a new branch | Moderate |
-| `list_commits` | List branch commits | Safe |
+| `list_commits`  | List branch commits | Safe     |
 
 ### Search Tools
 
-| Tool | Description | Risk |
-|------|-------------|------|
-| `search_code` | Search code across repos | Safe |
-| `search_users` | Search GitHub users | Safe |
+| Tool           | Description              | Risk |
+| -------------- | ------------------------ | ---- |
+| `search_code`  | Search code across repos | Safe |
+| `search_users` | Search GitHub users      | Safe |
 
 ### User Tools
 
-| Tool | Description | Risk |
-|------|-------------|------|
+| Tool     | Description            | Risk |
+| -------- | ---------------------- | ---- |
 | `get_me` | Get authenticated user | Safe |
 
 ---
 
-*Document Version: 1.0*
-*Created: December 2024*
-*Author: AI Design Assistant*
+_Document Version: 1.0_
+_Created: December 2024_
+_Author: AI Design Assistant_

@@ -46,6 +46,7 @@ You are Alex Chen, a senior full-stack engineer. You're continuing work on the D
 ### 🔄 Last Action Taken:
 
 Fixed the Desktop Commander package name:
+
 - Source: `src/main/mcp/servers/desktop-commander.ts` → `@wonderwhy-er/desktop-commander`
 - Config: `~/Library/Application Support/ArborChat/mcp-config.json` → same
 
@@ -56,11 +57,13 @@ Started `npm run dev` but didn't wait for full output.
 ### 1. Test MCP Connection (Priority)
 
 Run the app and verify Desktop Commander connects:
+
 ```bash
 cd /Users/cory.naegle/ArborChat && npm run dev
 ```
 
 Look for logs like:
+
 ```
 [MCP] Connected to desktop-commander
 [MCP] desktop-commander provides X tools: [...]
@@ -71,15 +74,20 @@ Look for logs like:
 1. Open the app, start a new chat
 2. Send: "List the files in my home directory"
 3. AI should respond with a `tool_use` block like:
-   ```
+
+   ````
    ```tool_use
    {
      "tool": "list_directory",
      "args": { "path": "/Users/cory.naegle" },
      "explanation": "Listing files in home directory"
    }
+   ````
+
    ```
+
    ```
+
 4. `ToolApprovalCard` should appear
 5. Click "Approve" → tool executes → AI continues with results
 
@@ -99,14 +107,14 @@ Look for logs like:
 
 ## Key Files to Reference
 
-| File | Purpose |
-|------|---------|
-| `src/main/mcp/manager.ts` | MCP connection & tool execution |
-| `src/main/mcp/ipc.ts` | IPC handlers for renderer communication |
-| `src/renderer/src/hooks/useToolChat.ts` | Main hook integrating MCP with chat |
-| `src/renderer/src/App.tsx` | Chat flow with tool handling (lines 85-170) |
-| `src/renderer/src/components/ChatWindow.tsx` | Tool UI rendering |
-| `src/renderer/src/lib/toolParser.ts` | Tool call parsing |
+| File                                         | Purpose                                     |
+| -------------------------------------------- | ------------------------------------------- |
+| `src/main/mcp/manager.ts`                    | MCP connection & tool execution             |
+| `src/main/mcp/ipc.ts`                        | IPC handlers for renderer communication     |
+| `src/renderer/src/hooks/useToolChat.ts`      | Main hook integrating MCP with chat         |
+| `src/renderer/src/App.tsx`                   | Chat flow with tool handling (lines 85-170) |
+| `src/renderer/src/components/ChatWindow.tsx` | Tool UI rendering                           |
+| `src/renderer/src/lib/toolParser.ts`         | Tool call parsing                           |
 
 ## Commands
 

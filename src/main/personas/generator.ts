@@ -102,15 +102,9 @@ Create a comprehensive persona definition in Markdown format. Start with a headi
 /**
  * Generate an appropriate emoji for the persona
  */
-async function generateEmoji(
-  model: any,
-  description: string,
-  name: string
-): Promise<string> {
+async function generateEmoji(model: any, description: string, name: string): Promise<string> {
   try {
-    const prompt = EMOJI_PROMPT
-      .replace('{name}', name)
-      .replace('{description}', description)
+    const prompt = EMOJI_PROMPT.replace('{name}', name).replace('{description}', description)
 
     const result = await model.generateContent(prompt)
     const emoji = result.response.text().trim()
@@ -129,10 +123,7 @@ async function generateEmoji(
 /**
  * Generate a short description for the persona
  */
-async function generateDescription(
-  model: any,
-  description: string
-): Promise<string> {
+async function generateDescription(model: any, description: string): Promise<string> {
   try {
     const prompt = DESCRIPTION_PROMPT.replace('{description}', description)
 
@@ -146,9 +137,7 @@ async function generateDescription(
   } catch (error) {
     console.warn('[PersonaGenerator] Failed to generate description:', error)
     // Fallback: truncate the original description
-    return description.length > 80 
-      ? description.substring(0, 77) + '...' 
-      : description
+    return description.length > 80 ? description.substring(0, 77) + '...' : description
   }
 }
 

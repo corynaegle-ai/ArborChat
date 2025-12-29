@@ -13,12 +13,12 @@ This document outlines the redesign of ArborChat's settings from a simple modal 
 
 ### Key Changes
 
-| Current State | New Design |
-|---------------|------------|
-| Single modal popup | Slide-out settings panel |
-| Combined model + API key | Separate API Keys section |
-| No tool management | Full Tools section with enable/disable toggles |
-| No GitHub PAT entry | Dedicated GitHub configuration modal |
+| Current State            | New Design                                     |
+| ------------------------ | ---------------------------------------------- |
+| Single modal popup       | Slide-out settings panel                       |
+| Combined model + API key | Separate API Keys section                      |
+| No tool management       | Full Tools section with enable/disable toggles |
+| No GitHub PAT entry      | Dedicated GitHub configuration modal           |
 
 ---
 
@@ -136,34 +136,28 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
   if (!isOpen) return null
 
   return (
-    <div 
-      className="fixed inset-0 z-50 flex"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Settings"
-    >
+    <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true" aria-label="Settings">
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
       {/* Panel */}
-      <div className={cn(
-        "relative ml-auto h-full w-full max-w-3xl",
-        "bg-background border-l border-secondary",
-        "shadow-2xl shadow-black/50",
-        "animate-slide-in-right"
-      )}>
+      <div
+        className={cn(
+          'relative ml-auto h-full w-full max-w-3xl',
+          'bg-background border-l border-secondary',
+          'shadow-2xl shadow-black/50',
+          'animate-slide-in-right'
+        )}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-secondary">
           <h1 className="text-xl font-bold text-white">Settings</h1>
           <button
             onClick={onClose}
             className={cn(
-              "p-2 rounded-lg",
-              "text-text-muted hover:text-white hover:bg-secondary",
-              "transition-colors"
+              'p-2 rounded-lg',
+              'text-text-muted hover:text-white hover:bg-secondary',
+              'transition-colors'
             )}
             aria-label="Close settings"
           >
@@ -181,11 +175,11 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                   <button
                     onClick={() => setActiveSection(item.id)}
                     className={cn(
-                      "w-full flex items-center gap-3 p-3 rounded-lg",
-                      "text-left transition-all duration-150",
+                      'w-full flex items-center gap-3 p-3 rounded-lg',
+                      'text-left transition-all duration-150',
                       activeSection === item.id
-                        ? "bg-secondary text-white"
-                        : "text-text-muted hover:text-text-normal hover:bg-secondary/40"
+                        ? 'bg-secondary text-white'
+                        : 'text-text-muted hover:text-text-normal hover:bg-secondary/40'
                     )}
                   >
                     <item.icon size={18} />
@@ -264,15 +258,10 @@ export function APIKeysSection() {
 
   useEffect(() => {
     // Load current model and check which providers have keys
-    Promise.all([
-      window.api.getSelectedModel(),
-      window.api.getApiKey()
-    ]).then(([model, key]) => {
+    Promise.all([window.api.getSelectedModel(), window.api.getApiKey()]).then(([model, key]) => {
       setSelectedModel(model)
       if (key) {
-        setProviders(prev => prev.map(p => 
-          p.id === 'gemini' ? { ...p, hasKey: true } : p
-        ))
+        setProviders((prev) => prev.map((p) => (p.id === 'gemini' ? { ...p, hasKey: true } : p)))
       }
     })
   }, [])
@@ -280,16 +269,14 @@ export function APIKeysSection() {
   const handleSaveKey = async (providerId: string) => {
     if (!keyInput.trim()) return
     setLoading(true)
-    
+
     try {
       if (providerId === 'gemini') {
         await window.api.saveApiKey(keyInput)
       }
       // Add other providers here
-      
-      setProviders(prev => prev.map(p => 
-        p.id === providerId ? { ...p, hasKey: true } : p
-      ))
+
+      setProviders((prev) => prev.map((p) => (p.id === providerId ? { ...p, hasKey: true } : p)))
       setKeyInput('')
       setShowKeyInput(null)
     } catch (error) {
@@ -322,26 +309,21 @@ export function APIKeysSection() {
             <p className="text-xs text-text-muted">Choose which model to use for chat</p>
           </div>
         </div>
-        <ModelSelector 
-          selectedModel={selectedModel} 
-          onModelChange={handleModelChange} 
-        />
+        <ModelSelector selectedModel={selectedModel} onModelChange={handleModelChange} />
       </div>
 
       {/* Provider List */}
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-text-muted uppercase tracking-wider">
-          Providers
-        </h3>
-        
+        <h3 className="text-sm font-medium text-text-muted uppercase tracking-wider">Providers</h3>
+
         {providers.map((provider) => (
           <div
             key={provider.id}
             className={cn(
-              "p-4 rounded-xl border transition-all",
+              'p-4 rounded-xl border transition-all',
               provider.hasKey
-                ? "bg-green-500/5 border-green-500/20"
-                : "bg-secondary/30 border-secondary/50"
+                ? 'bg-green-500/5 border-green-500/20'
+                : 'bg-secondary/30 border-secondary/50'
             )}
           >
             <div className="flex items-start justify-between">
@@ -379,9 +361,9 @@ export function APIKeysSection() {
                     <button
                       onClick={() => {
                         // TODO: Implement key deletion
-                        setProviders(prev => prev.map(p => 
-                          p.id === provider.id ? { ...p, hasKey: false } : p
-                        ))
+                        setProviders((prev) =>
+                          prev.map((p) => (p.id === provider.id ? { ...p, hasKey: false } : p))
+                        )
                       }}
                       className="p-2 text-text-muted hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
                       title="Remove key"
@@ -393,9 +375,9 @@ export function APIKeysSection() {
                   <button
                     onClick={() => setShowKeyInput(provider.id)}
                     className={cn(
-                      "flex items-center gap-2 px-3 py-1.5 rounded-lg",
-                      "bg-primary hover:bg-primary/90 text-white text-sm font-medium",
-                      "transition-colors"
+                      'flex items-center gap-2 px-3 py-1.5 rounded-lg',
+                      'bg-primary hover:bg-primary/90 text-white text-sm font-medium',
+                      'transition-colors'
                     )}
                   >
                     <Plus size={14} />
@@ -415,10 +397,10 @@ export function APIKeysSection() {
                     onChange={(e) => setKeyInput(e.target.value)}
                     placeholder={provider.id === 'gemini' ? 'AIzaSy...' : 'Enter API key'}
                     className={cn(
-                      "flex-1 px-3 py-2 rounded-lg",
-                      "bg-tertiary border border-gray-700",
-                      "text-white placeholder-text-muted/50",
-                      "focus:outline-none focus:ring-2 focus:ring-primary"
+                      'flex-1 px-3 py-2 rounded-lg',
+                      'bg-tertiary border border-gray-700',
+                      'text-white placeholder-text-muted/50',
+                      'focus:outline-none focus:ring-2 focus:ring-primary'
                     )}
                     autoFocus
                   />
@@ -426,10 +408,10 @@ export function APIKeysSection() {
                     onClick={() => handleSaveKey(provider.id)}
                     disabled={!keyInput.trim() || loading}
                     className={cn(
-                      "px-4 py-2 rounded-lg font-medium",
-                      "bg-primary hover:bg-primary/90 text-white",
-                      "disabled:opacity-50 disabled:cursor-not-allowed",
-                      "transition-colors"
+                      'px-4 py-2 rounded-lg font-medium',
+                      'bg-primary hover:bg-primary/90 text-white',
+                      'disabled:opacity-50 disabled:cursor-not-allowed',
+                      'transition-colors'
                     )}
                   >
                     {loading ? 'Saving...' : 'Save'}
@@ -444,13 +426,15 @@ export function APIKeysSection() {
                     Cancel
                   </button>
                 </div>
-                
+
                 {provider.id === 'gemini' && (
                   <p className="mt-2 text-xs text-text-muted">
                     Get your API key from{' '}
                     <a
                       href="#"
-                      onClick={() => window.open('https://aistudio.google.com/app/apikey', '_blank')}
+                      onClick={() =>
+                        window.open('https://aistudio.google.com/app/apikey', '_blank')
+                      }
                       className="text-primary hover:underline"
                     >
                       aistudio.google.com
@@ -473,18 +457,17 @@ export function APIKeysSection() {
 
 Manages MCP servers with enable/disable toggles and configuration access.
 
-
 ```tsx
 // src/renderer/src/components/settings/sections/ToolsSection.tsx
 
 import { useState, useEffect } from 'react'
-import { 
-  Wrench, 
-  Github, 
-  Terminal, 
-  Settings, 
-  Check, 
-  X, 
+import {
+  Wrench,
+  Github,
+  Terminal,
+  Settings,
+  Check,
+  X,
   RefreshCw,
   ExternalLink,
   AlertCircle
@@ -531,7 +514,8 @@ export function ToolsSection() {
           displayName: 'Desktop Commander',
           description: 'File system access, terminal commands, process management',
           icon: Terminal,
-          enabled: status.config.servers.find(s => s.name === 'desktop-commander')?.enabled ?? false,
+          enabled:
+            status.config.servers.find((s) => s.name === 'desktop-commander')?.enabled ?? false,
           connected: status.connectionStatus['desktop-commander'] ?? false,
           requiresConfig: false,
           configured: true,
@@ -543,7 +527,7 @@ export function ToolsSection() {
           displayName: 'GitHub',
           description: 'Repository management, issues, pull requests, code search',
           icon: Github,
-          enabled: status.config.servers.find(s => s.name === 'github')?.enabled ?? false,
+          enabled: status.config.servers.find((s) => s.name === 'github')?.enabled ?? false,
           connected: githubStatus.isConnected,
           requiresConfig: true,
           configured: githubStatus.isConfigured,
@@ -560,8 +544,8 @@ export function ToolsSection() {
   }
 
   const handleToggleServer = async (serverId: string, enabled: boolean) => {
-    const server = servers.find(s => s.id === serverId)
-    
+    const server = servers.find((s) => s.id === serverId)
+
     // If enabling a server that requires config but isn't configured, open config modal
     if (enabled && server?.requiresConfig && !server.configured) {
       setConfigModalServer(serverId)
@@ -570,11 +554,11 @@ export function ToolsSection() {
 
     try {
       const config = await window.api.mcp.getConfig()
-      const updatedServers = config.servers.map(s => 
+      const updatedServers = config.servers.map((s) =>
         s.name === serverId ? { ...s, enabled } : s
       )
       await window.api.mcp.updateConfig({ servers: updatedServers })
-      
+
       // Reconnect if enabling
       if (enabled) {
         setReconnecting(serverId)
@@ -634,23 +618,23 @@ export function ToolsSection() {
           <div
             key={server.id}
             className={cn(
-              "p-4 rounded-xl border transition-all",
+              'p-4 rounded-xl border transition-all',
               server.enabled && server.connected
-                ? "bg-green-500/5 border-green-500/20"
+                ? 'bg-green-500/5 border-green-500/20'
                 : server.enabled && !server.connected
-                ? "bg-yellow-500/5 border-yellow-500/20"
-                : "bg-secondary/30 border-secondary/50"
+                  ? 'bg-yellow-500/5 border-yellow-500/20'
+                  : 'bg-secondary/30 border-secondary/50'
             )}
           >
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-3">
                 {/* Icon */}
-                <div className={cn(
-                  "p-2 rounded-lg",
-                  server.enabled 
-                    ? "bg-primary/20 text-primary" 
-                    : "bg-secondary text-text-muted"
-                )}>
+                <div
+                  className={cn(
+                    'p-2 rounded-lg',
+                    server.enabled ? 'bg-primary/20 text-primary' : 'bg-secondary text-text-muted'
+                  )}
+                >
                   <server.icon size={20} />
                 </div>
 
@@ -658,7 +642,7 @@ export function ToolsSection() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h4 className="font-medium text-white">{server.displayName}</h4>
-                    
+
                     {/* Status Badges */}
                     {server.enabled && server.connected && (
                       <span className="flex items-center gap-1 text-xs text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full">
@@ -695,10 +679,10 @@ export function ToolsSection() {
                   <button
                     onClick={() => setConfigModalServer(server.id)}
                     className={cn(
-                      "p-2 rounded-lg transition-colors",
+                      'p-2 rounded-lg transition-colors',
                       server.configured
-                        ? "text-text-muted hover:text-white hover:bg-secondary"
-                        : "text-orange-400 hover:text-orange-300 hover:bg-orange-400/10"
+                        ? 'text-text-muted hover:text-white hover:bg-secondary'
+                        : 'text-orange-400 hover:text-orange-300 hover:bg-orange-400/10'
                     )}
                     title={server.configured ? 'Edit configuration' : 'Setup required'}
                   >
@@ -728,10 +712,7 @@ export function ToolsSection() {
 
       {/* Modals */}
       {configModalServer === 'github' && (
-        <GitHubConfigModal
-          onClose={() => setConfigModalServer(null)}
-          onSave={handleConfigSave}
-        />
+        <GitHubConfigModal onClose={() => setConfigModalServer(null)} onSave={handleConfigSave} />
       )}
     </div>
   )
@@ -752,18 +733,18 @@ function ToggleSwitch({ checked, onChange, disabled }: ToggleSwitchProps) {
       onClick={() => !disabled && onChange(!checked)}
       disabled={disabled}
       className={cn(
-        "relative inline-flex h-6 w-11 items-center rounded-full",
-        "transition-colors duration-200 ease-in-out",
-        "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background",
-        checked ? "bg-primary" : "bg-secondary",
-        disabled && "opacity-50 cursor-not-allowed"
+        'relative inline-flex h-6 w-11 items-center rounded-full',
+        'transition-colors duration-200 ease-in-out',
+        'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background',
+        checked ? 'bg-primary' : 'bg-secondary',
+        disabled && 'opacity-50 cursor-not-allowed'
       )}
     >
       <span
         className={cn(
-          "inline-block h-4 w-4 rounded-full bg-white shadow-lg",
-          "transform transition-transform duration-200 ease-in-out",
-          checked ? "translate-x-6" : "translate-x-1"
+          'inline-block h-4 w-4 rounded-full bg-white shadow-lg',
+          'transform transition-transform duration-200 ease-in-out',
+          checked ? 'translate-x-6' : 'translate-x-1'
         )}
       />
     </button>
@@ -781,12 +762,12 @@ The configuration modal for GitHub MCP server with PAT entry and account managem
 // src/renderer/src/components/settings/modals/GitHubConfigModal.tsx
 
 import { useState, useEffect } from 'react'
-import { 
-  X, 
-  Github, 
-  Key, 
-  ExternalLink, 
-  Check, 
+import {
+  X,
+  Github,
+  Key,
+  ExternalLink,
+  Check,
   AlertCircle,
   Trash2,
   Copy,
@@ -842,7 +823,7 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
 
     try {
       const result = await window.api.mcp.github.configure(token)
-      
+
       if (result.success) {
         setSuccess(true)
         setCurrentAccount({
@@ -851,7 +832,7 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
         })
         setToken('')
         setShowAddToken(false)
-        
+
         // Brief delay to show success state
         setTimeout(() => {
           onSave()
@@ -878,20 +859,17 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
   }
 
   return (
-    <div 
-      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={onClose}>
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
       {/* Modal */}
-      <div 
+      <div
         className={cn(
-          "relative w-full max-w-lg",
-          "bg-background rounded-xl border border-secondary",
-          "shadow-2xl shadow-black/50",
-          "animate-scale-in"
+          'relative w-full max-w-lg',
+          'bg-background rounded-xl border border-secondary',
+          'shadow-2xl shadow-black/50',
+          'animate-scale-in'
         )}
         onClick={(e) => e.stopPropagation()}
       >
@@ -920,9 +898,7 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
           {success && (
             <div className="flex items-center gap-3 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
               <Check className="text-green-400" size={18} />
-              <span className="text-sm text-green-400">
-                GitHub connected successfully!
-              </span>
+              <span className="text-sm text-green-400">GitHub connected successfully!</span>
             </div>
           )}
 
@@ -941,8 +917,8 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
                     {currentAccount.avatarUrl ? (
-                      <img 
-                        src={currentAccount.avatarUrl} 
+                      <img
+                        src={currentAccount.avatarUrl}
                         alt={currentAccount.username}
                         className="w-full h-full rounded-full"
                       />
@@ -952,9 +928,7 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-white">
-                        @{currentAccount.username}
-                      </span>
+                      <span className="font-medium text-white">@{currentAccount.username}</span>
                       <span className="flex items-center gap-1 text-xs text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full">
                         <Check size={10} />
                         Connected
@@ -969,9 +943,9 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
                 <button
                   onClick={handleDisconnect}
                   className={cn(
-                    "flex items-center gap-2 px-3 py-1.5 rounded-lg",
-                    "text-red-400 hover:text-red-300 hover:bg-red-400/10",
-                    "text-sm transition-colors"
+                    'flex items-center gap-2 px-3 py-1.5 rounded-lg',
+                    'text-red-400 hover:text-red-300 hover:bg-red-400/10',
+                    'text-sm transition-colors'
                   )}
                 >
                   <Trash2 size={14} />
@@ -993,15 +967,28 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
 
               {/* Instructions */}
               <div className="p-3 bg-tertiary/50 rounded-lg border border-tertiary text-sm space-y-2">
-                <p className="text-text-muted">To connect GitHub, create a Personal Access Token (PAT) with these scopes:</p>
+                <p className="text-text-muted">
+                  To connect GitHub, create a Personal Access Token (PAT) with these scopes:
+                </p>
                 <ul className="list-disc list-inside text-text-muted space-y-1 ml-2">
-                  <li><code className="text-primary/80">repo</code> - Full repository access</li>
-                  <li><code className="text-primary/80">read:org</code> - Read organization data</li>
-                  <li><code className="text-primary/80">read:user</code> - Read user profile</li>
+                  <li>
+                    <code className="text-primary/80">repo</code> - Full repository access
+                  </li>
+                  <li>
+                    <code className="text-primary/80">read:org</code> - Read organization data
+                  </li>
+                  <li>
+                    <code className="text-primary/80">read:user</code> - Read user profile
+                  </li>
                 </ul>
                 <a
                   href="#"
-                  onClick={() => window.open('https://github.com/settings/tokens/new?scopes=repo,read:org,read:user', '_blank')}
+                  onClick={() =>
+                    window.open(
+                      'https://github.com/settings/tokens/new?scopes=repo,read:org,read:user',
+                      '_blank'
+                    )
+                  }
                   className="flex items-center gap-1 text-primary hover:underline mt-2"
                 >
                   Create a new token on GitHub
@@ -1011,9 +998,7 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
 
               {/* Token Input */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-text-muted">
-                  Personal Access Token
-                </label>
+                <label className="text-sm font-medium text-text-muted">Personal Access Token</label>
                 <div className="flex gap-2">
                   <input
                     type="password"
@@ -1021,10 +1006,10 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
                     onChange={(e) => setToken(e.target.value)}
                     placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
                     className={cn(
-                      "flex-1 px-3 py-2.5 rounded-lg",
-                      "bg-tertiary border border-gray-700",
-                      "text-white placeholder-text-muted/50 font-mono text-sm",
-                      "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      'flex-1 px-3 py-2.5 rounded-lg',
+                      'bg-tertiary border border-gray-700',
+                      'text-white placeholder-text-muted/50 font-mono text-sm',
+                      'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent'
                     )}
                     autoFocus
                   />
@@ -1038,10 +1023,10 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
             <button
               onClick={() => setShowAddToken(true)}
               className={cn(
-                "w-full flex items-center justify-center gap-2 p-3 rounded-lg",
-                "border border-dashed border-secondary hover:border-primary/50",
-                "text-text-muted hover:text-white",
-                "transition-colors"
+                'w-full flex items-center justify-center gap-2 p-3 rounded-lg',
+                'border border-dashed border-secondary hover:border-primary/50',
+                'text-text-muted hover:text-white',
+                'transition-colors'
               )}
             >
               <RefreshCw size={16} />
@@ -1063,10 +1048,10 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
               onClick={handleSaveToken}
               disabled={!token.trim() || loading}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-lg font-medium",
-                "bg-primary hover:bg-primary/90 text-white",
-                "disabled:opacity-50 disabled:cursor-not-allowed",
-                "transition-colors"
+                'flex items-center gap-2 px-4 py-2 rounded-lg font-medium',
+                'bg-primary hover:bg-primary/90 text-white',
+                'disabled:opacity-50 disabled:cursor-not-allowed',
+                'transition-colors'
               )}
             >
               {loading ? (
@@ -1247,50 +1232,49 @@ export function GitHubConfigModal({ onClose, onSave }: GitHubConfigModalProps) {
 }
 ```
 
-
 ---
 
 ## Implementation Roadmap
 
 ### Phase 1: Foundation (Day 1-2)
 
-| Task | Priority | Effort |
-|------|----------|--------|
-| Create `SettingsPanel.tsx` container | High | 2h |
-| Create menu navigation component | High | 1h |
-| Add slide-in animations | Medium | 0.5h |
-| Update `App.tsx` to use panel instead of modal | High | 1h |
-| Add CSS animations | Low | 0.5h |
+| Task                                           | Priority | Effort |
+| ---------------------------------------------- | -------- | ------ |
+| Create `SettingsPanel.tsx` container           | High     | 2h     |
+| Create menu navigation component               | High     | 1h     |
+| Add slide-in animations                        | Medium   | 0.5h   |
+| Update `App.tsx` to use panel instead of modal | High     | 1h     |
+| Add CSS animations                             | Low      | 0.5h   |
 
 ### Phase 2: API Keys Section (Day 2-3)
 
-| Task | Priority | Effort |
-|------|----------|--------|
-| Create `APIKeysSection.tsx` | High | 3h |
-| Integrate existing `ModelSelector` | High | 1h |
-| Add provider cards with status | Medium | 2h |
-| Implement key add/update/remove flow | High | 2h |
-| Wire up to existing IPC handlers | High | 1h |
+| Task                                 | Priority | Effort |
+| ------------------------------------ | -------- | ------ |
+| Create `APIKeysSection.tsx`          | High     | 3h     |
+| Integrate existing `ModelSelector`   | High     | 1h     |
+| Add provider cards with status       | Medium   | 2h     |
+| Implement key add/update/remove flow | High     | 2h     |
+| Wire up to existing IPC handlers     | High     | 1h     |
 
 ### Phase 3: Tools Section (Day 3-4)
 
-| Task | Priority | Effort |
-|------|----------|--------|
-| Create `ToolsSection.tsx` | High | 3h |
-| Create reusable `ToggleSwitch` component | Medium | 1h |
-| Add server cards with status badges | High | 2h |
-| Implement enable/disable with reconnect | High | 2h |
-| Create `GitHubConfigModal.tsx` | High | 3h |
+| Task                                     | Priority | Effort |
+| ---------------------------------------- | -------- | ------ |
+| Create `ToolsSection.tsx`                | High     | 3h     |
+| Create reusable `ToggleSwitch` component | Medium   | 1h     |
+| Add server cards with status badges      | High     | 2h     |
+| Implement enable/disable with reconnect  | High     | 2h     |
+| Create `GitHubConfigModal.tsx`           | High     | 3h     |
 
 ### Phase 4: Polish & Testing (Day 5)
 
-| Task | Priority | Effort |
-|------|----------|--------|
-| Keyboard navigation (Escape to close) | Medium | 1h |
-| Focus management | Medium | 1h |
-| Loading states & error handling | High | 2h |
-| Responsive design adjustments | Low | 1h |
-| Manual testing | High | 2h |
+| Task                                  | Priority | Effort |
+| ------------------------------------- | -------- | ------ |
+| Keyboard navigation (Escape to close) | Medium   | 1h     |
+| Focus management                      | Medium   | 1h     |
+| Loading states & error handling       | High     | 2h     |
+| Responsive design adjustments         | Low      | 1h     |
+| Manual testing                        | High     | 2h     |
 
 ---
 
@@ -1374,12 +1358,12 @@ export interface SettingsMenuItemDef {
 
 ### Keyboard Navigation
 
-| Key | Action |
-|-----|--------|
-| `Escape` | Close panel/modal |
-| `Tab` | Navigate through focusable elements |
-| `Enter/Space` | Activate buttons/toggles |
-| `Arrow Up/Down` | Navigate menu items |
+| Key             | Action                              |
+| --------------- | ----------------------------------- |
+| `Escape`        | Close panel/modal                   |
+| `Tab`           | Navigate through focusable elements |
+| `Enter/Space`   | Activate buttons/toggles            |
+| `Arrow Up/Down` | Navigate menu items                 |
 
 ### ARIA Attributes
 
@@ -1440,17 +1424,17 @@ export interface SettingsMenuItemDef {
 
 ## Appendix: Color Reference
 
-| Element | Light | Dark (Current) |
-|---------|-------|----------------|
-| Background | - | `bg-background` (#1a1a2e) |
-| Secondary | - | `bg-secondary` (#2d2d44) |
-| Tertiary | - | `bg-tertiary` (#16213e) |
-| Primary | - | `bg-primary` (#e94560) |
-| Text Normal | - | `text-text-normal` (#f0f0f0) |
-| Text Muted | - | `text-text-muted` (#8888aa) |
-| Success | - | `text-green-400` |
-| Warning | - | `text-yellow-400` |
-| Error | - | `text-red-400` |
+| Element     | Light | Dark (Current)               |
+| ----------- | ----- | ---------------------------- |
+| Background  | -     | `bg-background` (#1a1a2e)    |
+| Secondary   | -     | `bg-secondary` (#2d2d44)     |
+| Tertiary    | -     | `bg-tertiary` (#16213e)      |
+| Primary     | -     | `bg-primary` (#e94560)       |
+| Text Normal | -     | `text-text-normal` (#f0f0f0) |
+| Text Muted  | -     | `text-text-muted` (#8888aa)  |
+| Success     | -     | `text-green-400`             |
+| Warning     | -     | `text-yellow-400`            |
+| Error       | -     | `text-red-400`               |
 
 ---
 
@@ -1461,6 +1445,7 @@ export interface SettingsMenuItemDef {
 This design document provides complete specifications for replacing the current settings modal with a full-featured settings panel. The implementation maintains consistency with the existing ArborChat design language while introducing a more scalable, organized settings architecture.
 
 Key benefits:
+
 - Clear separation of concerns (API Keys vs Tools)
 - Scalable menu structure for future sections
 - Improved discoverability of configuration options
@@ -1469,6 +1454,6 @@ Key benefits:
 
 ---
 
-*Document Version: 1.0*  
-*Last Updated: December 27, 2024*  
-*Author: Alex Chen (Design Lead)*
+_Document Version: 1.0_  
+_Last Updated: December 27, 2024_  
+_Author: Alex Chen (Design Lead)_

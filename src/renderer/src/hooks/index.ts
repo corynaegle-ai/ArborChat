@@ -8,11 +8,7 @@ export type { PendingToolCall, UseToolChatResult } from './useToolChat'
 
 // Phase 4: Slash Commands
 export { useSlashCommands } from './useSlashCommands'
-export type { 
-  SlashCommand, 
-  SlashCommandMatch, 
-  SlashCommandState 
-} from './useSlashCommands'
+export type { SlashCommand, SlashCommandMatch, SlashCommandState } from './useSlashCommands'
 
 // Agent System
 export { useAgent } from './useAgent'

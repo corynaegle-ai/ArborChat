@@ -74,7 +74,6 @@ This design extends ArborChat's AI provider architecture to support Anthropic Cl
 2. **No Provider-Key Mapping** - No way to associate keys with specific providers
 3. **Hardcoded Provider Types** - `ModelProvider = 'gemini' | 'ollama'` needs extension
 
-
 ---
 
 ## Proposed Architecture
@@ -119,13 +118,13 @@ This design extends ArborChat's AI provider architecture to support Anthropic Cl
 
 ### Component Overview
 
-| Component | Location | Responsibility |
-|-----------|----------|----------------|
-| `CredentialManager` | `src/main/credentials/` | Encrypted storage & retrieval of API keys |
-| `AnthropicProvider` | `src/main/providers/anthropic.ts` | Claude API integration |
-| `ProviderRegistry` | `src/main/providers/registry.ts` | Model-to-provider mapping |
-| `APIKeysSection` | `src/renderer/.../settings/` | UI for managing API keys |
-| `ModelSelector` | `src/renderer/src/components/` | Extended for Anthropic models |
+| Component           | Location                          | Responsibility                            |
+| ------------------- | --------------------------------- | ----------------------------------------- |
+| `CredentialManager` | `src/main/credentials/`           | Encrypted storage & retrieval of API keys |
+| `AnthropicProvider` | `src/main/providers/anthropic.ts` | Claude API integration                    |
+| `ProviderRegistry`  | `src/main/providers/registry.ts`  | Model-to-provider mapping                 |
+| `APIKeysSection`    | `src/renderer/.../settings/`      | UI for managing API keys                  |
+| `ModelSelector`     | `src/renderer/src/components/`    | Extended for Anthropic models             |
 
 ---
 
@@ -137,44 +136,44 @@ This design extends ArborChat's AI provider architecture to support Anthropic Cl
 /**
  * Supported AI provider identifiers
  */
-export type ProviderId = 'anthropic' | 'gemini' | 'ollama' | 'openai';
+export type ProviderId = 'anthropic' | 'gemini' | 'ollama' | 'openai'
 
 /**
  * Provider metadata for UI display
  */
 export interface ProviderInfo {
-  id: ProviderId;
-  name: string;
-  icon: string;
-  description: string;
-  isLocal: boolean;
-  requiresApiKey: boolean;
-  helpUrl?: string;
-  keyPlaceholder?: string;
-  keyPattern?: RegExp;
+  id: ProviderId
+  name: string
+  icon: string
+  description: string
+  isLocal: boolean
+  requiresApiKey: boolean
+  helpUrl?: string
+  keyPlaceholder?: string
+  keyPattern?: RegExp
 }
 
 /**
  * Extended model type with provider info
  */
 export interface AIModel {
-  id: string;
-  name: string;
-  description: string;
-  provider: ProviderId;
-  isLocal: boolean;
-  capabilities?: ModelCapabilities;
+  id: string
+  name: string
+  description: string
+  provider: ProviderId
+  isLocal: boolean
+  capabilities?: ModelCapabilities
 }
 
 /**
  * Model capabilities for feature detection
  */
 export interface ModelCapabilities {
-  streaming: boolean;
-  systemPrompt: boolean;
-  vision: boolean;
-  toolUse: boolean;
-  maxTokens?: number;
+  streaming: boolean
+  systemPrompt: boolean
+  vision: boolean
+  toolUse: boolean
+  maxTokens?: number
 }
 ```
 
@@ -185,23 +184,22 @@ export interface ModelCapabilities {
  * Encrypted credentials structure
  */
 export interface EncryptedCredentials {
-  version: number;
+  version: number
   providers: {
-    [K in ProviderId]?: ProviderCredential;
-  };
+    [K in ProviderId]?: ProviderCredential
+  }
 }
 
 /**
  * Individual provider credential
  */
 export interface ProviderCredential {
-  apiKey: string;
-  createdAt: string;
-  lastUsedAt?: string;
-  metadata?: Record<string, unknown>;
+  apiKey: string
+  createdAt: string
+  lastUsedAt?: string
+  metadata?: Record<string, unknown>
 }
 ```
-
 
 ---
 
@@ -210,107 +208,106 @@ export interface ProviderCredential {
 ### 1. Credential Manager (`src/main/credentials/manager.ts`)
 
 ```typescript
-import { safeStorage, app } from 'electron';
-import * as fs from 'fs';
-import * as path from 'path';
-import { ProviderId, EncryptedCredentials, ProviderCredential } from './types';
+import { safeStorage, app } from 'electron'
+import * as fs from 'fs'
+import * as path from 'path'
+import { ProviderId, EncryptedCredentials, ProviderCredential } from './types'
 
-const CREDENTIALS_FILE = 'provider-credentials.enc';
-const SCHEMA_VERSION = 1;
+const CREDENTIALS_FILE = 'provider-credentials.enc'
+const SCHEMA_VERSION = 1
 
 /**
  * Centralized credential management for all AI providers
  */
 class CredentialManager {
-  private credentialsPath: string;
-  private cache: EncryptedCredentials | null = null;
+  private credentialsPath: string
+  private cache: EncryptedCredentials | null = null
 
   constructor() {
-    this.credentialsPath = path.join(app.getPath('userData'), CREDENTIALS_FILE);
+    this.credentialsPath = path.join(app.getPath('userData'), CREDENTIALS_FILE)
   }
 
   isSecureStorageAvailable(): boolean {
-    return safeStorage.isEncryptionAvailable();
+    return safeStorage.isEncryptionAvailable()
   }
 
   private async loadCredentials(): Promise<EncryptedCredentials> {
-    if (this.cache) return this.cache;
+    if (this.cache) return this.cache
 
     if (!fs.existsSync(this.credentialsPath)) {
-      return { version: SCHEMA_VERSION, providers: {} };
+      return { version: SCHEMA_VERSION, providers: {} }
     }
 
     try {
-      const encryptedData = fs.readFileSync(this.credentialsPath);
-      const decryptedString = safeStorage.decryptString(encryptedData);
-      this.cache = JSON.parse(decryptedString);
-      return this.cache!;
+      const encryptedData = fs.readFileSync(this.credentialsPath)
+      const decryptedString = safeStorage.decryptString(encryptedData)
+      this.cache = JSON.parse(decryptedString)
+      return this.cache!
     } catch (error) {
-      console.error('[Credentials] Failed to load:', error);
-      return { version: SCHEMA_VERSION, providers: {} };
+      console.error('[Credentials] Failed to load:', error)
+      return { version: SCHEMA_VERSION, providers: {} }
     }
   }
 
   private async saveCredentials(credentials: EncryptedCredentials): Promise<void> {
-    const jsonString = JSON.stringify(credentials);
-    const encryptedBuffer = safeStorage.encryptString(jsonString);
-    fs.writeFileSync(this.credentialsPath, encryptedBuffer);
-    this.cache = credentials;
+    const jsonString = JSON.stringify(credentials)
+    const encryptedBuffer = safeStorage.encryptString(jsonString)
+    fs.writeFileSync(this.credentialsPath, encryptedBuffer)
+    this.cache = credentials
   }
 
   async getApiKey(providerId: ProviderId): Promise<string | null> {
-    const credentials = await this.loadCredentials();
-    return credentials.providers[providerId]?.apiKey || null;
+    const credentials = await this.loadCredentials()
+    return credentials.providers[providerId]?.apiKey || null
   }
 
   async setApiKey(providerId: ProviderId, apiKey: string): Promise<void> {
     if (!this.isSecureStorageAvailable()) {
-      throw new Error('Secure storage is not available');
+      throw new Error('Secure storage is not available')
     }
 
-    const credentials = await this.loadCredentials();
+    const credentials = await this.loadCredentials()
     credentials.providers[providerId] = {
       apiKey,
-      createdAt: new Date().toISOString(),
-    };
-    await this.saveCredentials(credentials);
+      createdAt: new Date().toISOString()
+    }
+    await this.saveCredentials(credentials)
   }
 
   async deleteApiKey(providerId: ProviderId): Promise<void> {
-    const credentials = await this.loadCredentials();
-    delete credentials.providers[providerId];
-    await this.saveCredentials(credentials);
+    const credentials = await this.loadCredentials()
+    delete credentials.providers[providerId]
+    await this.saveCredentials(credentials)
   }
 
   async hasApiKey(providerId: ProviderId): Promise<boolean> {
-    const key = await this.getApiKey(providerId);
-    return key !== null && key.length > 0;
+    const key = await this.getApiKey(providerId)
+    return key !== null && key.length > 0
   }
 
   async getConfiguredProviders(): Promise<Record<ProviderId, boolean>> {
-    const credentials = await this.loadCredentials();
-    const result: Record<string, boolean> = {};
+    const credentials = await this.loadCredentials()
+    const result: Record<string, boolean> = {}
     for (const providerId of Object.keys(credentials.providers)) {
-      result[providerId] = true;
+      result[providerId] = true
     }
-    return result as Record<ProviderId, boolean>;
+    return result as Record<ProviderId, boolean>
   }
 
   clearCache(): void {
-    this.cache = null;
+    this.cache = null
   }
 }
 
-export const credentialManager = new CredentialManager();
+export const credentialManager = new CredentialManager()
 ```
-
 
 ### 2. Anthropic Provider (`src/main/providers/anthropic.ts`)
 
 ```typescript
-import Anthropic from '@anthropic-ai/sdk';
-import { AIProvider } from './base';
-import { AIModel, StreamParams } from './types';
+import Anthropic from '@anthropic-ai/sdk'
+import { AIProvider } from './base'
+import { AIModel, StreamParams } from './types'
 
 const ANTHROPIC_MODELS: AIModel[] = [
   {
@@ -324,7 +321,7 @@ const ANTHROPIC_MODELS: AIModel[] = [
       systemPrompt: true,
       vision: true,
       toolUse: true,
-      maxTokens: 32000,
+      maxTokens: 32000
     }
   },
   {
@@ -338,154 +335,151 @@ const ANTHROPIC_MODELS: AIModel[] = [
       systemPrompt: true,
       vision: true,
       toolUse: true,
-      maxTokens: 16000,
+      maxTokens: 16000
     }
-  },
-];
+  }
+]
 
 export class AnthropicProvider implements AIProvider {
-  readonly name = 'anthropic';
+  readonly name = 'anthropic'
 
   canHandleModel(modelId: string): boolean {
-    return ANTHROPIC_MODELS.some(m => m.id === modelId) || 
-           modelId.startsWith('claude-');
+    return ANTHROPIC_MODELS.some((m) => m.id === modelId) || modelId.startsWith('claude-')
   }
 
   async validateConnection(apiKey?: string): Promise<boolean> {
-    if (!apiKey) return false;
+    if (!apiKey) return false
 
     try {
-      const client = new Anthropic({ apiKey });
+      const client = new Anthropic({ apiKey })
       await client.messages.create({
         model: 'claude-sonnet-4-5-20250929',
         max_tokens: 10,
         messages: [{ role: 'user', content: 'Hi' }]
-      });
-      return true;
+      })
+      return true
     } catch (error: any) {
-      console.error('[Anthropic] Validation failed:', error.message);
-      return false;
+      console.error('[Anthropic] Validation failed:', error.message)
+      return false
     }
   }
 
   async getAvailableModels(_apiKey?: string): Promise<AIModel[]> {
-    return ANTHROPIC_MODELS;
+    return ANTHROPIC_MODELS
   }
 
   async streamResponse(params: StreamParams, apiKey?: string): Promise<void> {
     if (!apiKey) {
-      throw new Error('API key is required for Anthropic provider');
+      throw new Error('API key is required for Anthropic provider')
     }
 
-    const { window, messages, modelId } = params;
-    const client = new Anthropic({ apiKey });
+    const { window, messages, modelId } = params
+    const client = new Anthropic({ apiKey })
 
     // Extract system message
-    const systemMessage = messages.find(m => m.role === 'system');
-    
+    const systemMessage = messages.find((m) => m.role === 'system')
+
     // Convert messages to Anthropic format
     const anthropicMessages = messages
-      .filter(m => m.role !== 'system')
-      .map(m => ({
+      .filter((m) => m.role !== 'system')
+      .map((m) => ({
         role: m.role as 'user' | 'assistant',
         content: m.content
-      }));
+      }))
 
     try {
       const stream = await client.messages.stream({
         model: modelId,
         max_tokens: 8192,
         system: systemMessage?.content,
-        messages: anthropicMessages,
-      });
+        messages: anthropicMessages
+      })
 
       for await (const event of stream) {
-        if (event.type === 'content_block_delta' && 
-            event.delta.type === 'text_delta') {
-          window.webContents.send('ai:token', event.delta.text);
+        if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+          window.webContents.send('ai:token', event.delta.text)
         }
       }
 
-      window.webContents.send('ai:done');
+      window.webContents.send('ai:done')
     } catch (error: any) {
-      console.error('[Anthropic] streamResponse ERROR:', error);
-      window.webContents.send('ai:error', error.message || 'Unknown error');
-      throw error;
+      console.error('[Anthropic] streamResponse ERROR:', error)
+      window.webContents.send('ai:error', error.message || 'Unknown error')
+      throw error
     }
   }
 }
 ```
 
-
 ### 3. Updated Provider Types (`src/main/providers/types.ts`)
 
 ```typescript
-import { BrowserWindow } from 'electron';
+import { BrowserWindow } from 'electron'
 
 // Extended provider type
-export type ModelProvider = 'gemini' | 'ollama' | 'anthropic' | 'openai';
+export type ModelProvider = 'gemini' | 'ollama' | 'anthropic' | 'openai'
 
 export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
+  role: 'system' | 'user' | 'assistant'
+  content: string
 }
 
 export interface StreamParams {
-  window: BrowserWindow;
-  messages: ChatMessage[];
-  modelId: string;
+  window: BrowserWindow
+  messages: ChatMessage[]
+  modelId: string
 }
 
 export interface AIModel {
-  id: string;
-  name: string;
-  description: string;
-  provider: ModelProvider;
-  isLocal: boolean;
+  id: string
+  name: string
+  description: string
+  provider: ModelProvider
+  isLocal: boolean
   capabilities?: {
-    streaming: boolean;
-    systemPrompt: boolean;
-    vision: boolean;
-    toolUse: boolean;
-    maxTokens?: number;
-  };
+    streaming: boolean
+    systemPrompt: boolean
+    vision: boolean
+    toolUse: boolean
+    maxTokens?: number
+  }
 }
 ```
 
 ### 4. Updated AI Router (`src/main/ai.ts`)
 
 ```typescript
-import { BrowserWindow } from 'electron';
-import { GeminiProvider } from './providers/gemini';
-import { OllamaProvider } from './providers/ollama';
-import { AnthropicProvider } from './providers/anthropic';
-import { AIProvider } from './providers/base';
-import { ChatMessage, StreamParams, ModelProvider } from './providers/types';
-import { credentialManager } from './credentials/manager';
+import { BrowserWindow } from 'electron'
+import { GeminiProvider } from './providers/gemini'
+import { OllamaProvider } from './providers/ollama'
+import { AnthropicProvider } from './providers/anthropic'
+import { AIProvider } from './providers/base'
+import { ChatMessage, StreamParams, ModelProvider } from './providers/types'
+import { credentialManager } from './credentials/manager'
 
-const DEFAULT_MODEL = 'gemini-2.5-flash';
+const DEFAULT_MODEL = 'gemini-2.5-flash'
 
-const geminiProvider = new GeminiProvider();
-const ollamaProvider = new OllamaProvider();
-const anthropicProvider = new AnthropicProvider();
+const geminiProvider = new GeminiProvider()
+const ollamaProvider = new OllamaProvider()
+const anthropicProvider = new AnthropicProvider()
 
 const providers: AIProvider[] = [
-  anthropicProvider,  // Check first for claude- prefix
+  anthropicProvider, // Check first for claude- prefix
   geminiProvider,
-  ollamaProvider,
-];
+  ollamaProvider
+]
 
 function getProviderForModel(modelId: string): AIProvider {
-  const provider = providers.find(p => p.canHandleModel(modelId));
-  if (!provider) return geminiProvider;
-  return provider;
+  const provider = providers.find((p) => p.canHandleModel(modelId))
+  if (!provider) return geminiProvider
+  return provider
 }
 
 function getProviderIdFromModel(modelId: string): ModelProvider {
-  if (modelId.startsWith('claude-')) return 'anthropic';
-  if (modelId.startsWith('gemini-')) return 'gemini';
-  if (modelId.includes(':')) return 'ollama';
-  return 'gemini';
+  if (modelId.startsWith('claude-')) return 'anthropic'
+  if (modelId.startsWith('gemini-')) return 'gemini'
+  if (modelId.includes(':')) return 'ollama'
+  return 'gemini'
 }
 
 export async function streamResponse(
@@ -494,62 +488,62 @@ export async function streamResponse(
   messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
   modelName: string = DEFAULT_MODEL
 ): Promise<void> {
-  const provider = getProviderForModel(modelName);
-  const providerId = getProviderIdFromModel(modelName);
-  
-  let apiKey: string | null = null;
+  const provider = getProviderForModel(modelName)
+  const providerId = getProviderIdFromModel(modelName)
+
+  let apiKey: string | null = null
   if (providerId !== 'ollama') {
-    apiKey = await credentialManager.getApiKey(providerId);
+    apiKey = await credentialManager.getApiKey(providerId)
     if (!apiKey) {
-      window.webContents.send('ai:error', `No API key configured for ${providerId}`);
-      throw new Error(`No API key configured for ${providerId}`);
+      window.webContents.send('ai:error', `No API key configured for ${providerId}`)
+      throw new Error(`No API key configured for ${providerId}`)
     }
   }
 
   const params: StreamParams = {
     window,
-    messages: messages.map(m => ({ role: m.role, content: m.content })),
+    messages: messages.map((m) => ({ role: m.role, content: m.content })),
     modelId: modelName
-  };
+  }
 
-  await provider.streamResponse(params, apiKey || undefined);
+  await provider.streamResponse(params, apiKey || undefined)
 }
 ```
 
 ### 5. IPC Handlers (`src/main/index.ts` additions)
 
 ```typescript
-import { credentialManager } from './credentials/manager';
+import { credentialManager } from './credentials/manager'
 
 // Credential Management Handlers
 ipcMain.handle('credentials:get-configured', async () => {
-  return credentialManager.getConfiguredProviders();
-});
+  return credentialManager.getConfiguredProviders()
+})
 
 ipcMain.handle('credentials:has-key', async (_, providerId: string) => {
-  return credentialManager.hasApiKey(providerId as ProviderId);
-});
+  return credentialManager.hasApiKey(providerId as ProviderId)
+})
 
 ipcMain.handle('credentials:set-key', async (_, { providerId, apiKey }) => {
-  await credentialManager.setApiKey(providerId, apiKey);
-  return { success: true };
-});
+  await credentialManager.setApiKey(providerId, apiKey)
+  return { success: true }
+})
 
 ipcMain.handle('credentials:delete-key', async (_, providerId: string) => {
-  await credentialManager.deleteApiKey(providerId as ProviderId);
-  return { success: true };
-});
+  await credentialManager.deleteApiKey(providerId as ProviderId)
+  return { success: true }
+})
 
 ipcMain.handle('credentials:validate-key', async (_, { providerId, apiKey }) => {
   switch (providerId) {
     case 'anthropic':
-      return new AnthropicProvider().validateConnection(apiKey);
+      return new AnthropicProvider().validateConnection(apiKey)
     case 'gemini':
-      return new GeminiProvider().validateConnection(apiKey);
+      return new GeminiProvider().validateConnection(apiKey)
     default:
-      return false;
+      return false
   }
-});
+})
 
 // Updated models handler
 ipcMain.handle('models:get-available', async () => {
@@ -557,11 +551,10 @@ ipcMain.handle('models:get-available', async () => {
     new AnthropicProvider().getAvailableModels(),
     new GeminiProvider().getAvailableModels(),
     new OllamaProvider().getAvailableModels()
-  ]);
-  return [...anthropicModels, ...geminiModels, ...ollamaModels];
-});
+  ])
+  return [...anthropicModels, ...geminiModels, ...ollamaModels]
+})
 ```
-
 
 ---
 
@@ -570,17 +563,17 @@ ipcMain.handle('models:get-available', async () => {
 ### 1. Updated Provider Data (`src/renderer/src/types.ts`)
 
 ```typescript
-export type ModelProvider = 'gemini' | 'ollama' | 'anthropic' | 'openai';
+export type ModelProvider = 'gemini' | 'ollama' | 'anthropic' | 'openai'
 
 export interface ProviderInfo {
-  id: ModelProvider;
-  name: string;
-  icon: string;
-  description: string;
-  isLocal: boolean;
-  requiresApiKey: boolean;
-  helpUrl?: string;
-  placeholder?: string;
+  id: ModelProvider
+  name: string
+  icon: string
+  description: string
+  isLocal: boolean
+  requiresApiKey: boolean
+  helpUrl?: string
+  placeholder?: string
 }
 
 export const PROVIDERS: ProviderInfo[] = [
@@ -612,7 +605,7 @@ export const PROVIDERS: ProviderInfo[] = [
     isLocal: true,
     requiresApiKey: false
   }
-];
+]
 
 export const ANTHROPIC_MODELS: Model[] = [
   {
@@ -629,7 +622,7 @@ export const ANTHROPIC_MODELS: Model[] = [
     provider: 'anthropic',
     isLocal: false
   }
-];
+]
 ```
 
 ### 2. Updated Preload API (`src/preload/index.ts`)
@@ -637,19 +630,17 @@ export const ANTHROPIC_MODELS: Model[] = [
 ```typescript
 const api = {
   // ... existing methods ...
-  
+
   credentials: {
     getConfigured: () => ipcRenderer.invoke('credentials:get-configured'),
-    hasKey: (providerId: string) => 
-      ipcRenderer.invoke('credentials:has-key', providerId),
-    setKey: (providerId: string, apiKey: string) => 
+    hasKey: (providerId: string) => ipcRenderer.invoke('credentials:has-key', providerId),
+    setKey: (providerId: string, apiKey: string) =>
       ipcRenderer.invoke('credentials:set-key', { providerId, apiKey }),
-    deleteKey: (providerId: string) => 
-      ipcRenderer.invoke('credentials:delete-key', providerId),
+    deleteKey: (providerId: string) => ipcRenderer.invoke('credentials:delete-key', providerId),
     validateKey: (providerId: string, apiKey: string) =>
       ipcRenderer.invoke('credentials:validate-key', { providerId, apiKey })
-  },
-};
+  }
+}
 ```
 
 ### 3. Updated ModelSelector UI
@@ -661,23 +652,22 @@ const providerSections = [
     id: 'anthropic',
     icon: <Brain size={14} className="text-orange-400" />,
     label: 'Anthropic Claude',
-    models: models.filter(m => m.provider === 'anthropic')
+    models: models.filter((m) => m.provider === 'anthropic')
   },
   {
     id: 'gemini',
     icon: <Cloud size={14} className="text-blue-400" />,
     label: 'Google Gemini',
-    models: models.filter(m => m.provider === 'gemini')
+    models: models.filter((m) => m.provider === 'gemini')
   },
   {
     id: 'ollama',
     icon: <HardDrive size={14} className="text-green-400" />,
     label: 'Ollama Local',
-    models: models.filter(m => m.provider === 'ollama')
+    models: models.filter((m) => m.provider === 'ollama')
   }
-];
+]
 ```
-
 
 ---
 
@@ -711,11 +701,11 @@ For users with existing Gemini keys in old storage:
 
 ```typescript
 async function migrateExistingKeys(): Promise<void> {
-  const oldKey = await db.getApiKey();
-  
-  if (oldKey && !await credentialManager.hasApiKey('gemini')) {
-    console.log('[Migration] Migrating existing Gemini API key');
-    await credentialManager.setApiKey('gemini', oldKey);
+  const oldKey = await db.getApiKey()
+
+  if (oldKey && !(await credentialManager.hasApiKey('gemini'))) {
+    console.log('[Migration] Migrating existing Gemini API key')
+    await credentialManager.setApiKey('gemini', oldKey)
   }
 }
 ```
@@ -725,6 +715,7 @@ async function migrateExistingKeys(): Promise<void> {
 ## Implementation Phases
 
 ### Phase 1: Credential Manager (Est: 2 hours)
+
 - [ ] Create `src/main/credentials/` directory structure
 - [ ] Implement `CredentialManager` class with safeStorage
 - [ ] Add IPC handlers for credential operations
@@ -732,6 +723,7 @@ async function migrateExistingKeys(): Promise<void> {
 - [ ] Write migration for existing Gemini keys
 
 ### Phase 2: Anthropic Provider (Est: 2 hours)
+
 - [ ] Install `@anthropic-ai/sdk` package
 - [ ] Create `AnthropicProvider` class
 - [ ] Add Claude Opus 4.5 and Sonnet 4.5 models
@@ -739,18 +731,21 @@ async function migrateExistingKeys(): Promise<void> {
 - [ ] Update provider types for 'anthropic'
 
 ### Phase 3: AI Router Updates (Est: 1 hour)
+
 - [ ] Register AnthropicProvider in providers array
 - [ ] Update `getProviderIdFromModel()` for claude- prefix
 - [ ] Modify `streamResponse()` for automatic key injection
 - [ ] Update models handler to include Anthropic
 
 ### Phase 4: Frontend Updates (Est: 2 hours)
+
 - [ ] Update types with Anthropic models and PROVIDERS
 - [ ] Extend APIKeysSection for multi-provider
 - [ ] Update ModelSelector with provider grouping
 - [ ] Add Anthropic section with proper styling
 
 ### Phase 5: Testing & Polish (Est: 1 hour)
+
 - [ ] Test Anthropic streaming end-to-end
 - [ ] Verify key validation flow
 - [ ] Test model switching between providers
@@ -767,18 +762,18 @@ async function migrateExistingKeys(): Promise<void> {
 ```typescript
 describe('CredentialManager', () => {
   it('should store and retrieve API keys', async () => {
-    await credentialManager.setApiKey('anthropic', 'test-key');
-    const key = await credentialManager.getApiKey('anthropic');
-    expect(key).toBe('test-key');
-  });
+    await credentialManager.setApiKey('anthropic', 'test-key')
+    const key = await credentialManager.getApiKey('anthropic')
+    expect(key).toBe('test-key')
+  })
 
   it('should report configured providers correctly', async () => {
-    await credentialManager.setApiKey('gemini', 'gemini-key');
-    const configured = await credentialManager.getConfiguredProviders();
-    expect(configured.gemini).toBe(true);
-    expect(configured.anthropic).toBe(false);
-  });
-});
+    await credentialManager.setApiKey('gemini', 'gemini-key')
+    const configured = await credentialManager.getConfiguredProviders()
+    expect(configured.gemini).toBe(true)
+    expect(configured.anthropic).toBe(false)
+  })
+})
 ```
 
 ### Integration Tests
@@ -812,8 +807,8 @@ const OPENAI_MODELS: AIModel[] = [
     description: 'Latest multimodal model',
     provider: 'openai',
     isLocal: false
-  },
-];
+  }
+]
 
 export class OpenAIProvider implements AIProvider {
   // Same pattern as other providers
@@ -825,12 +820,12 @@ export class OpenAIProvider implements AIProvider {
 ```typescript
 interface ProviderSettings {
   anthropic?: {
-    defaultMaxTokens: number;
-    defaultTemperature: number;
-  };
+    defaultMaxTokens: number
+    defaultTemperature: number
+  }
   gemini?: {
-    safetySettings: SafetySetting[];
-  };
+    safetySettings: SafetySetting[]
+  }
 }
 ```
 
@@ -838,12 +833,12 @@ interface ProviderSettings {
 
 ```typescript
 interface UsageRecord {
-  providerId: ProviderId;
-  modelId: string;
-  inputTokens: number;
-  outputTokens: number;
-  timestamp: string;
-  cost?: number;
+  providerId: ProviderId
+  modelId: string
+  inputTokens: number
+  outputTokens: number
+  timestamp: string
+  cost?: number
 }
 ```
 
@@ -851,22 +846,22 @@ interface UsageRecord {
 
 ## File Changes Summary
 
-| File | Action | Description |
-|------|--------|-------------|
-| `src/main/credentials/manager.ts` | Create | Credential storage |
-| `src/main/credentials/types.ts` | Create | Credential types |
-| `src/main/credentials/index.ts` | Create | Barrel export |
-| `src/main/providers/anthropic.ts` | Create | Anthropic provider |
-| `src/main/providers/types.ts` | Modify | Add 'anthropic' type |
-| `src/main/ai.ts` | Modify | Add Anthropic, auto key injection |
-| `src/main/models.ts` | Modify | Include Anthropic models |
-| `src/main/index.ts` | Modify | Add credential IPC handlers |
-| `src/preload/index.ts` | Modify | Add credentials API |
-| `src/renderer/src/types.ts` | Modify | Add Anthropic types |
-| `src/renderer/.../APIKeysSection.tsx` | Modify | Multi-provider UI |
-| `src/renderer/.../ModelSelector.tsx` | Modify | Provider grouping |
-| `package.json` | Modify | Add @anthropic-ai/sdk |
+| File                                  | Action | Description                       |
+| ------------------------------------- | ------ | --------------------------------- |
+| `src/main/credentials/manager.ts`     | Create | Credential storage                |
+| `src/main/credentials/types.ts`       | Create | Credential types                  |
+| `src/main/credentials/index.ts`       | Create | Barrel export                     |
+| `src/main/providers/anthropic.ts`     | Create | Anthropic provider                |
+| `src/main/providers/types.ts`         | Modify | Add 'anthropic' type              |
+| `src/main/ai.ts`                      | Modify | Add Anthropic, auto key injection |
+| `src/main/models.ts`                  | Modify | Include Anthropic models          |
+| `src/main/index.ts`                   | Modify | Add credential IPC handlers       |
+| `src/preload/index.ts`                | Modify | Add credentials API               |
+| `src/renderer/src/types.ts`           | Modify | Add Anthropic types               |
+| `src/renderer/.../APIKeysSection.tsx` | Modify | Multi-provider UI                 |
+| `src/renderer/.../ModelSelector.tsx`  | Modify | Provider grouping                 |
+| `package.json`                        | Modify | Add @anthropic-ai/sdk             |
 
 ---
 
-*End of Design Document*
+_End of Design Document_

@@ -13,13 +13,13 @@ This document outlines the design for ArborChat's **Persona System**, enabling u
 
 ### Key Features
 
-| Feature | Description |
-|---------|-------------|
-| Persona Generation | AI-assisted creation of custom personas via natural language |
-| Markdown Storage | Personas saved as `.md` files in user's data directory |
-| Settings Management | Full CRUD interface for personas in Settings panel |
-| Slash Commands | Quick `/persona` commands for loading and listing |
-| Context Integration | Seamless injection of persona into system prompt |
+| Feature             | Description                                                  |
+| ------------------- | ------------------------------------------------------------ |
+| Persona Generation  | AI-assisted creation of custom personas via natural language |
+| Markdown Storage    | Personas saved as `.md` files in user's data directory       |
+| Settings Management | Full CRUD interface for personas in Settings panel           |
+| Slash Commands      | Quick `/persona` commands for loading and listing            |
+| Context Integration | Seamless injection of persona into system prompt             |
 
 ---
 
@@ -118,17 +118,19 @@ src/
 ### Persona File Format
 
 ```markdown
-<!-- filepath: ~/.arborchat/personas/senior-developer.md -->
----
+## <!-- filepath: ~/.arborchat/personas/senior-developer.md -->
+
 name: Senior Developer
 emoji: 👨‍💻
 description: Expert software engineer with 15+ years experience
 created: 2024-12-27T10:30:00Z
 modified: 2024-12-27T14:15:00Z
 tags:
-  - coding
-  - technical
-  - mentoring
+
+- coding
+- technical
+- mentoring
+
 ---
 
 # Senior Developer Persona
@@ -190,7 +192,7 @@ export class PersonaService {
    */
   async init(): Promise<void> {
     if (this.initialized) return
-    
+
     try {
       await fs.mkdir(PERSONAS_DIR, { recursive: true })
       this.initialized = true
@@ -206,18 +208,18 @@ export class PersonaService {
    */
   async listPersonas(): Promise<PersonaMetadata[]> {
     await this.init()
-    
+
     try {
       const files = await fs.readdir(PERSONAS_DIR)
-      const mdFiles = files.filter(f => f.endsWith('.md'))
-      
+      const mdFiles = files.filter((f) => f.endsWith('.md'))
+
       const personas: PersonaMetadata[] = []
-      
+
       for (const file of mdFiles) {
         try {
           const content = await fs.readFile(join(PERSONAS_DIR, file), 'utf-8')
           const { data } = matter(content)
-          
+
           personas.push({
             id: file.replace('.md', ''),
             name: data.name || file.replace('.md', ''),
@@ -231,9 +233,9 @@ export class PersonaService {
           console.warn(`[PersonaService] Failed to parse ${file}:`, parseError)
         }
       }
-      
-      return personas.sort((a, b) => 
-        new Date(b.modified).getTime() - new Date(a.modified).getTime()
+
+      return personas.sort(
+        (a, b) => new Date(b.modified).getTime() - new Date(a.modified).getTime()
       )
     } catch (error) {
       console.error('[PersonaService] Failed to list personas:', error)
@@ -246,13 +248,13 @@ export class PersonaService {
    */
   async getPersona(id: string): Promise<Persona | null> {
     await this.init()
-    
+
     const filePath = join(PERSONAS_DIR, `${this.sanitizeId(id)}.md`)
-    
+
     try {
       const content = await fs.readFile(filePath, 'utf-8')
       const { data, content: body } = matter(content)
-      
+
       return {
         id: id,
         name: data.name || id,
@@ -274,10 +276,10 @@ export class PersonaService {
    */
   async createPersona(input: CreatePersonaInput): Promise<Persona> {
     await this.init()
-    
+
     const id = this.sanitizeId(input.name)
     const filePath = join(PERSONAS_DIR, `${id}.md`)
-    
+
     // Check if already exists
     try {
       await fs.access(filePath)
@@ -285,7 +287,7 @@ export class PersonaService {
     } catch (error: any) {
       if (error.code !== 'ENOENT') throw error
     }
-    
+
     const now = new Date().toISOString()
     const persona: Persona = {
       id,
@@ -297,7 +299,7 @@ export class PersonaService {
       tags: input.tags || [],
       content: input.content
     }
-    
+
     await this.savePersonaFile(persona)
     return persona
   }
@@ -310,25 +312,25 @@ export class PersonaService {
     if (!existing) {
       throw new Error(`Persona "${id}" not found`)
     }
-    
+
     const updated: Persona = {
       ...existing,
       ...updates,
       modified: new Date().toISOString()
     }
-    
+
     // Handle rename
     if (updates.name && updates.name !== existing.name) {
       const oldPath = join(PERSONAS_DIR, `${id}.md`)
       const newId = this.sanitizeId(updates.name)
       updated.id = newId
-      
+
       await this.savePersonaFile(updated)
       await fs.unlink(oldPath)
-      
+
       return updated
     }
-    
+
     await this.savePersonaFile(updated)
     return updated
   }
@@ -338,7 +340,7 @@ export class PersonaService {
    */
   async deletePersona(id: string): Promise<void> {
     const filePath = join(PERSONAS_DIR, `${this.sanitizeId(id)}.md`)
-    
+
     try {
       await fs.unlink(filePath)
       console.log(`[PersonaService] Deleted persona: ${id}`)
@@ -354,12 +356,12 @@ export class PersonaService {
   async getPersonaPrompt(id: string): Promise<string | null> {
     const persona = await this.getPersona(id)
     if (!persona) return null
-    
+
     return persona.content
   }
 
   // Private helpers
-  
+
   private sanitizeId(name: string): string {
     return name
       .toLowerCase()
@@ -370,7 +372,7 @@ export class PersonaService {
 
   private async savePersonaFile(persona: Persona): Promise<void> {
     const filePath = join(PERSONAS_DIR, `${persona.id}.md`)
-    
+
     const frontmatter = {
       name: persona.name,
       emoji: persona.emoji,
@@ -379,7 +381,7 @@ export class PersonaService {
       modified: persona.modified,
       tags: persona.tags
     }
-    
+
     const fileContent = matter.stringify(persona.content, frontmatter)
     await fs.writeFile(filePath, fileContent, 'utf-8')
   }
@@ -450,7 +452,7 @@ Create a comprehensive persona definition in Markdown format.`
 
     // Extract a good emoji based on the persona
     const emoji = await generateEmoji(description, name)
-    
+
     // Generate a short description
     const shortDescription = await generateDescription(description)
 
@@ -515,13 +517,25 @@ Reply with just the summary:`
 
 function extractTags(description: string): string[] {
   const commonTags = [
-    'coding', 'writing', 'creative', 'technical', 'business',
-    'education', 'research', 'casual', 'formal', 'expert',
-    'mentor', 'helper', 'analyst', 'designer', 'scientist'
+    'coding',
+    'writing',
+    'creative',
+    'technical',
+    'business',
+    'education',
+    'research',
+    'casual',
+    'formal',
+    'expert',
+    'mentor',
+    'helper',
+    'analyst',
+    'designer',
+    'scientist'
   ]
-  
+
   const descLower = description.toLowerCase()
-  return commonTags.filter(tag => descLower.includes(tag)).slice(0, 5)
+  return commonTags.filter((tag) => descLower.includes(tag)).slice(0, 5)
 }
 ```
 
@@ -621,25 +635,25 @@ export interface CreatePersonaInput {
 const personaApi = {
   // List all personas
   list: () => ipcRenderer.invoke('personas:list') as Promise<PersonaMetadata[]>,
-  
+
   // Get single persona
   get: (id: string) => ipcRenderer.invoke('personas:get', id) as Promise<Persona | null>,
-  
+
   // Create new persona
-  create: (input: CreatePersonaInput) => 
+  create: (input: CreatePersonaInput) =>
     ipcRenderer.invoke('personas:create', input) as Promise<Persona>,
-  
+
   // Update persona
   update: (id: string, updates: Partial<CreatePersonaInput>) =>
     ipcRenderer.invoke('personas:update', { id, updates }) as Promise<Persona>,
-  
+
   // Delete persona
   delete: (id: string) => ipcRenderer.invoke('personas:delete', id) as Promise<void>,
-  
+
   // Get persona prompt for chat
-  getPrompt: (id: string) => 
+  getPrompt: (id: string) =>
     ipcRenderer.invoke('personas:get-prompt', id) as Promise<string | null>,
-  
+
   // Generate persona via AI
   generate: (description: string, name: string) =>
     ipcRenderer.invoke('personas:generate', { description, name }) as Promise<CreatePersonaInput>
@@ -682,9 +696,9 @@ interface PersonasSectionProps {
   onActivatePersona?: (id: string | null) => void
 }
 
-export function PersonasSection({ 
-  activePersonaId, 
-  onActivatePersona 
+export function PersonasSection({
+  activePersonaId,
+  onActivatePersona
 }: PersonasSectionProps) {
   const [personas, setPersonas] = useState<PersonaMetadata[]>([])
   const [loading, setLoading] = useState(true)
@@ -718,7 +732,7 @@ export function PersonasSection({
 
   const handleDeletePersona = async (id: string) => {
     if (!confirm('Are you sure you want to delete this persona?')) return
-    
+
     try {
       await window.api.personas.delete(id)
       await loadPersonas()
@@ -778,9 +792,9 @@ export function PersonasSection({
 
       {/* Search */}
       <div className="relative">
-        <Search 
-          size={16} 
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" 
+        <Search
+          size={16}
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
         />
         <input
           type="text"
@@ -823,7 +837,7 @@ export function PersonasSection({
               {searchQuery ? 'No personas found' : 'No personas yet'}
             </h3>
             <p className="text-sm text-text-muted mb-4">
-              {searchQuery 
+              {searchQuery
                 ? 'Try a different search term'
                 : 'Create your first custom AI persona'}
             </p>
@@ -1016,7 +1030,7 @@ export function CreatePersonaModal({ onClose, onCreated }: CreatePersonaModalPro
 
     try {
       const generated = await window.api.personas.generate(description, name)
-      
+
       // Create the persona with generated content
       await window.api.personas.create({
         name: generated.name || name,
@@ -1057,13 +1071,13 @@ export function CreatePersonaModal({ onClose, onCreated }: CreatePersonaModalPro
   }
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-[60] flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
-      <div 
+      <div
         className={cn(
           "relative w-full max-w-2xl max-h-[90vh] overflow-y-auto",
           "bg-background rounded-xl border border-secondary",
@@ -1280,7 +1294,6 @@ export function CreatePersonaModal({ onClose, onCreated }: CreatePersonaModalPro
 
 ### 8. Slash Command System
 
-
 ```typescript
 // src/renderer/src/hooks/useSlashCommands.ts
 
@@ -1312,9 +1325,9 @@ interface UseSlashCommandsOptions {
   onShowPersonaList: () => void
 }
 
-export function useSlashCommands({ 
-  onActivatePersona, 
-  onShowPersonaList 
+export function useSlashCommands({
+  onActivatePersona,
+  onShowPersonaList
 }: UseSlashCommandsOptions) {
   const [personas, setPersonas] = useState<PersonaMetadata[]>([])
   const [state, setState] = useState<SlashCommandState>({
@@ -1330,126 +1343,133 @@ export function useSlashCommands({
   }, [])
 
   // Define available commands
-  const commands = useMemo<SlashCommand[]>(() => [
-    {
-      name: 'persona',
-      description: 'Load a persona by name',
-      syntax: '/persona <name>',
-      handler: async (args: string) => {
-        const personaName = args.trim().toLowerCase()
-        
-        if (personaName === 'list') {
+  const commands = useMemo<SlashCommand[]>(
+    () => [
+      {
+        name: 'persona',
+        description: 'Load a persona by name',
+        syntax: '/persona <name>',
+        handler: async (args: string) => {
+          const personaName = args.trim().toLowerCase()
+
+          if (personaName === 'list') {
+            onShowPersonaList()
+            return
+          }
+
+          // Find persona by name (fuzzy match)
+          const match = personas.find(
+            (p) =>
+              p.id === personaName ||
+              p.name.toLowerCase() === personaName ||
+              p.name.toLowerCase().startsWith(personaName)
+          )
+
+          if (match) {
+            onActivatePersona(match.id)
+          }
+        }
+      },
+      {
+        name: 'persona list',
+        description: 'Show all available personas',
+        syntax: '/persona list',
+        handler: () => {
           onShowPersonaList()
-          return
         }
-        
-        // Find persona by name (fuzzy match)
-        const match = personas.find(p => 
-          p.id === personaName ||
-          p.name.toLowerCase() === personaName ||
-          p.name.toLowerCase().startsWith(personaName)
-        )
-        
-        if (match) {
-          onActivatePersona(match.id)
+      },
+      {
+        name: 'clear persona',
+        description: 'Deactivate current persona',
+        syntax: '/clear persona',
+        handler: () => {
+          onActivatePersona(null)
         }
       }
-    },
-    {
-      name: 'persona list',
-      description: 'Show all available personas',
-      syntax: '/persona list',
-      handler: () => {
-        onShowPersonaList()
-      }
-    },
-    {
-      name: 'clear persona',
-      description: 'Deactivate current persona',
-      syntax: '/clear persona',
-      handler: () => {
-        onActivatePersona(null)
-      }
-    }
-  ], [personas, onActivatePersona, onShowPersonaList])
+    ],
+    [personas, onActivatePersona, onShowPersonaList]
+  )
 
   // Parse input for slash commands
-  const parseInput = useCallback((input: string): SlashCommandState => {
-    // Check if input starts with /
-    if (!input.startsWith('/')) {
+  const parseInput = useCallback(
+    (input: string): SlashCommandState => {
+      // Check if input starts with /
+      if (!input.startsWith('/')) {
+        return {
+          isActive: false,
+          query: '',
+          matches: [],
+          selectedIndex: 0
+        }
+      }
+
+      const query = input.slice(1).toLowerCase()
+
+      // Find matching commands
+      const matches: SlashCommandMatch[] = commands
+        .filter(
+          (cmd) =>
+            cmd.name.toLowerCase().startsWith(query) || cmd.syntax.toLowerCase().includes(query)
+        )
+        .map((cmd) => ({
+          command: cmd,
+          query,
+          fullMatch: cmd.name.toLowerCase() === query.split(' ')[0]
+        }))
+
+      // Also add persona name suggestions for /persona <name>
+      if (query.startsWith('persona ')) {
+        const personaQuery = query.slice(8).trim()
+        const personaMatches = personas
+          .filter((p) => p.name.toLowerCase().includes(personaQuery) || p.id.includes(personaQuery))
+          .slice(0, 5)
+          .map((p) => ({
+            command: {
+              name: `persona ${p.name}`,
+              description: p.description || `Load ${p.name} persona`,
+              syntax: `/persona ${p.name}`,
+              handler: () => onActivatePersona(p.id)
+            },
+            query: personaQuery,
+            fullMatch: p.name.toLowerCase() === personaQuery
+          }))
+
+        matches.push(...personaMatches)
+      }
+
       return {
-        isActive: false,
-        query: '',
-        matches: [],
+        isActive: true,
+        query,
+        matches: matches.slice(0, 8),
         selectedIndex: 0
       }
-    }
-
-    const query = input.slice(1).toLowerCase()
-
-    // Find matching commands
-    const matches: SlashCommandMatch[] = commands
-      .filter(cmd => 
-        cmd.name.toLowerCase().startsWith(query) ||
-        cmd.syntax.toLowerCase().includes(query)
-      )
-      .map(cmd => ({
-        command: cmd,
-        query,
-        fullMatch: cmd.name.toLowerCase() === query.split(' ')[0]
-      }))
-
-    // Also add persona name suggestions for /persona <name>
-    if (query.startsWith('persona ')) {
-      const personaQuery = query.slice(8).trim()
-      const personaMatches = personas
-        .filter(p => 
-          p.name.toLowerCase().includes(personaQuery) ||
-          p.id.includes(personaQuery)
-        )
-        .slice(0, 5)
-        .map(p => ({
-          command: {
-            name: `persona ${p.name}`,
-            description: p.description || `Load ${p.name} persona`,
-            syntax: `/persona ${p.name}`,
-            handler: () => onActivatePersona(p.id)
-          },
-          query: personaQuery,
-          fullMatch: p.name.toLowerCase() === personaQuery
-        }))
-      
-      matches.push(...personaMatches)
-    }
-
-    return {
-      isActive: true,
-      query,
-      matches: matches.slice(0, 8),
-      selectedIndex: 0
-    }
-  }, [commands, personas, onActivatePersona])
+    },
+    [commands, personas, onActivatePersona]
+  )
 
   // Handle input change
-  const handleInputChange = useCallback((input: string) => {
-    const newState = parseInput(input)
-    setState(newState)
-  }, [parseInput])
+  const handleInputChange = useCallback(
+    (input: string) => {
+      const newState = parseInput(input)
+      setState(newState)
+    },
+    [parseInput]
+  )
 
   // Handle selection navigation
   const handleNavigate = useCallback((direction: 'up' | 'down') => {
-    setState(prev => {
+    setState((prev) => {
       if (!prev.isActive || prev.matches.length === 0) return prev
-      
+
       const maxIndex = prev.matches.length - 1
       let newIndex = prev.selectedIndex
-      
+
       if (direction === 'up') {
         newIndex = prev.selectedIndex <= 0 ? maxIndex : prev.selectedIndex - 1
       } else {
         newIndex = prev.selectedIndex >= maxIndex ? 0 : prev.selectedIndex + 1
       }
-      
+
       return { ...prev, selectedIndex: newIndex }
     })
   }, [])
@@ -1457,45 +1477,47 @@ export function useSlashCommands({
   // Execute selected command
   const executeSelected = useCallback(async (): Promise<boolean> => {
     if (!state.isActive || state.matches.length === 0) return false
-    
+
     const match = state.matches[state.selectedIndex]
     if (!match) return false
-    
+
     // Extract args from the full query
     const args = state.query.slice(match.command.name.split(' ')[0].length).trim()
-    
+
     await match.command.handler(args)
-    
+
     setState({
       isActive: false,
       query: '',
       matches: [],
       selectedIndex: 0
     })
-    
+
     return true
   }, [state])
 
   // Execute specific command
-  const executeCommand = useCallback(async (input: string): Promise<boolean> => {
-    if (!input.startsWith('/')) return false
-    
-    const parts = input.slice(1).split(' ')
-    const commandName = parts[0].toLowerCase()
-    const args = parts.slice(1).join(' ')
-    
-    const command = commands.find(c => 
-      c.name.toLowerCase() === commandName ||
-      c.name.toLowerCase().startsWith(commandName)
-    )
-    
-    if (command) {
-      await command.handler(args)
-      return true
-    }
-    
-    return false
-  }, [commands])
+  const executeCommand = useCallback(
+    async (input: string): Promise<boolean> => {
+      if (!input.startsWith('/')) return false
+
+      const parts = input.slice(1).split(' ')
+      const commandName = parts[0].toLowerCase()
+      const args = parts.slice(1).join(' ')
+
+      const command = commands.find(
+        (c) => c.name.toLowerCase() === commandName || c.name.toLowerCase().startsWith(commandName)
+      )
+
+      if (command) {
+        await command.handler(args)
+        return true
+      }
+
+      return false
+    },
+    [commands]
+  )
 
   // Reset state
   const reset = useCallback(() => {
@@ -1526,11 +1548,11 @@ export function useSlashCommands({
 // src/renderer/src/components/chat/SlashCommandMenu.tsx
 
 import { useEffect, useRef } from 'react'
-import { 
-  User, 
-  List, 
+import {
+  User,
+  List,
   X,
-  ChevronRight 
+  ChevronRight
 } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { SlashCommandState } from '../../hooks/useSlashCommands'
@@ -1541,10 +1563,10 @@ interface SlashCommandMenuProps {
   onClose: () => void
 }
 
-export function SlashCommandMenu({ 
-  state, 
-  onSelect, 
-  onClose 
+export function SlashCommandMenu({
+  state,
+  onSelect,
+  onClose
 }: SlashCommandMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
   const selectedRef = useRef<HTMLButtonElement>(null)
@@ -1585,11 +1607,11 @@ export function SlashCommandMenu({
         <div className="text-xs text-text-muted px-2 py-1 mb-1">
           Commands
         </div>
-        
+
         {state.matches.map((match, index) => {
           const Icon = getCommandIcon(match.command.name)
           const isSelected = index === state.selectedIndex
-          
+
           return (
             <button
               key={`${match.command.name}-${index}`}
@@ -1609,7 +1631,7 @@ export function SlashCommandMenu({
               )}>
                 <Icon size={14} />
               </div>
-              
+
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-sm">
@@ -1627,7 +1649,7 @@ export function SlashCommandMenu({
           )
         })}
       </div>
-      
+
       <div className="border-t border-tertiary px-3 py-2 text-xs text-text-muted/60">
         <span className="inline-flex items-center gap-1">
           <kbd className="px-1 py-0.5 bg-tertiary rounded text-[10px]">↑↓</kbd>
@@ -1655,11 +1677,11 @@ export function SlashCommandMenu({
 // src/renderer/src/components/PersonaListModal.tsx
 
 import { useState, useEffect } from 'react'
-import { 
-  X, 
-  User, 
-  Check, 
-  Search 
+import {
+  X,
+  User,
+  Check,
+  Search
 } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { PersonaMetadata } from '../types/persona'
@@ -1671,11 +1693,11 @@ interface PersonaListModalProps {
   onSelect: (id: string) => void
 }
 
-export function PersonaListModal({ 
-  isOpen, 
+export function PersonaListModal({
+  isOpen,
   activePersonaId,
-  onClose, 
-  onSelect 
+  onClose,
+  onSelect
 }: PersonaListModalProps) {
   const [personas, setPersonas] = useState<PersonaMetadata[]>([])
   const [search, setSearch] = useState('')
@@ -1699,13 +1721,13 @@ export function PersonaListModal({
   )
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
-      <div 
+      <div
         className={cn(
           "relative w-full max-w-md",
           "bg-background rounded-xl border border-secondary",
@@ -1728,9 +1750,9 @@ export function PersonaListModal({
         {/* Search */}
         <div className="p-3 border-b border-secondary/50">
           <div className="relative">
-            <Search 
-              size={16} 
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" 
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
             />
             <input
               type="text"
@@ -1836,12 +1858,12 @@ function AppContent({ apiKey }: { apiKey: string }) {
   // Modified buildSystemPrompt to include persona
   const enhancedSystemPrompt = useCallback((basePrompt: string) => {
     let prompt = basePrompt
-    
+
     // Add persona content if active
     if (activePersonaContent) {
       prompt = `${activePersonaContent}\n\n---\n\n${prompt}`
     }
-    
+
     // Add MCP tool instructions
     return buildSystemPrompt(prompt)
   }, [activePersonaContent, buildSystemPrompt])
@@ -2029,7 +2051,7 @@ const MENU_ITEMS = [
 
 // Add to content rendering
 {activeSection === 'personas' && (
-  <PersonasSection 
+  <PersonasSection
     activePersonaId={activePersonaId}
     onActivatePersona={onActivatePersona}
   />
@@ -2041,6 +2063,7 @@ const MENU_ITEMS = [
 ## Implementation Checklist
 
 ### Phase 1: Core Infrastructure
+
 - [ ] Create `/src/main/personas/` directory structure
 - [ ] Implement `PersonaService` with CRUD operations
 - [ ] Add IPC handlers in `/src/main/personas/index.ts`
@@ -2048,6 +2071,7 @@ const MENU_ITEMS = [
 - [ ] Add persona types to `/src/renderer/src/types/persona.ts`
 
 ### Phase 2: Settings UI
+
 - [ ] Create `PersonasSection.tsx` component
 - [ ] Create `CreatePersonaModal.tsx` component
 - [ ] Create `PersonaDetailModal.tsx` component
@@ -2055,12 +2079,14 @@ const MENU_ITEMS = [
 - [ ] Implement persona card design
 
 ### Phase 3: Persona Generation
+
 - [ ] Implement `generator.ts` with AI generation
 - [ ] Add emoji and description generation
 - [ ] Add tag extraction logic
 - [ ] Test generation with various prompts
 
 ### Phase 4: Slash Commands
+
 - [ ] Create `useSlashCommands` hook
 - [ ] Create `SlashCommandMenu` component
 - [ ] Integrate with ChatWindow input
@@ -2069,6 +2095,7 @@ const MENU_ITEMS = [
 - [ ] Add `/clear persona` command
 
 ### Phase 5: Integration
+
 - [ ] Modify `App.tsx` for persona state
 - [ ] Update system prompt builder
 - [ ] Add persona indicator to chat
@@ -2076,6 +2103,7 @@ const MENU_ITEMS = [
 - [ ] Test full flow end-to-end
 
 ### Phase 6: Polish
+
 - [ ] Add default personas
 - [ ] Add keyboard shortcuts documentation
 - [ ] Add error handling and validation
@@ -2087,18 +2115,21 @@ const MENU_ITEMS = [
 ## Testing Plan
 
 ### Unit Tests
+
 - PersonaService CRUD operations
 - Persona file format parsing
 - Slash command parsing
 - Input validation
 
 ### Integration Tests
+
 - Persona creation via AI
 - Persona loading into chat context
 - Settings panel navigation
 - Slash command execution
 
 ### E2E Tests
+
 - Full persona creation flow
 - Persona switching during conversation
 - Persistence across app restart
@@ -2139,15 +2170,15 @@ const MENU_ITEMS = [
 
 ## Appendix: Keyboard Shortcuts
 
-| Shortcut | Action |
-|----------|--------|
-| `/` | Open slash command menu |
-| `↑` / `↓` | Navigate command options |
-| `Enter` | Select command |
-| `Esc` | Close command menu |
+| Shortcut               | Action                     |
+| ---------------------- | -------------------------- |
+| `/`                    | Open slash command menu    |
+| `↑` / `↓`              | Navigate command options   |
+| `Enter`                | Select command             |
+| `Esc`                  | Close command menu         |
 | `Cmd/Ctrl + Shift + P` | Open persona list (future) |
 
 ---
 
-*Document prepared by Alex Chen, Design Lead*  
-*Ready for implementation review*
+_Document prepared by Alex Chen, Design Lead_  
+_Ready for implementation review_

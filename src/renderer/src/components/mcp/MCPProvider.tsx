@@ -25,7 +25,8 @@ interface MCPContextValue {
   requestTool: (
     toolName: string,
     args: Record<string, unknown>,
-    explanation?: string
+    explanation?: string,
+    skipApproval?: boolean
   ) => Promise<MCPToolResult>
   approve: (id: string, modifiedArgs?: Record<string, unknown>) => Promise<MCPToolResult>
   alwaysApprove: (id: string, modifiedArgs?: Record<string, unknown>) => Promise<MCPToolResult>
@@ -96,7 +97,7 @@ export function MCPProvider({ children, autoInit = true }: MCPProviderProps) {
       const result = await window.api.mcp.reconnect()
       setTools(result.tools || [])
       setConnected(Object.values(result.connectionStatus || {}).some(Boolean))
-      
+
       // Reload system prompt
       const prompt = await window.api.mcp.getSystemPrompt()
       setSystemPrompt(prompt)
@@ -118,13 +119,14 @@ export function MCPProvider({ children, autoInit = true }: MCPProviderProps) {
     async (
       toolName: string,
       args: Record<string, unknown>,
-      explanation?: string
+      explanation?: string,
+      skipApproval?: boolean
     ): Promise<MCPToolResult> => {
       // Find the server for this tool
       const tool = tools.find((t) => t.name === toolName)
       const serverName = tool?.server || 'desktop-commander'
 
-      return window.api.mcp.requestTool(serverName, toolName, args, explanation)
+      return window.api.mcp.requestTool(serverName, toolName, args, explanation, skipApproval)
     },
     [tools]
   )

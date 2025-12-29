@@ -1,7 +1,7 @@
 /**
  * Persona Service
  * Core CRUD operations for persona management
- * 
+ *
  * Personas are stored as Markdown files with YAML frontmatter
  * in the user's data directory: ~/.arborchat/personas/
  */
@@ -9,12 +9,7 @@
 import { app } from 'electron'
 import { promises as fs } from 'fs'
 import { join, dirname } from 'path'
-import {
-  Persona,
-  PersonaMetadata,
-  CreatePersonaInput,
-  UpdatePersonaInput
-} from './types'
+import { Persona, PersonaMetadata, CreatePersonaInput, UpdatePersonaInput } from './types'
 
 // Validation constants
 const MAX_NAME_LENGTH = 100
@@ -126,10 +121,10 @@ class PersonaService {
 
     try {
       await fs.mkdir(this.personasDir, { recursive: true })
-      
+
       // Check if directory is empty and copy defaults
       await this.copyDefaultPersonasIfEmpty()
-      
+
       this.initialized = true
       console.log('[PersonaService] Initialized at:', this.personasDir)
     } catch (error) {
@@ -144,8 +139,8 @@ class PersonaService {
   private async copyDefaultPersonasIfEmpty(): Promise<void> {
     try {
       const existingFiles = await fs.readdir(this.personasDir)
-      const existingMdFiles = existingFiles.filter(f => f.endsWith('.md'))
-      
+      const existingMdFiles = existingFiles.filter((f) => f.endsWith('.md'))
+
       // Only copy if user has no personas
       if (existingMdFiles.length > 0) {
         console.log('[PersonaService] User already has personas, skipping defaults')
@@ -161,12 +156,12 @@ class PersonaService {
       }
 
       const defaultFiles = await fs.readdir(this.defaultPersonasDir)
-      const defaultMdFiles = defaultFiles.filter(f => f.endsWith('.md'))
+      const defaultMdFiles = defaultFiles.filter((f) => f.endsWith('.md'))
 
       for (const file of defaultMdFiles) {
         const src = join(this.defaultPersonasDir, file)
         const dest = join(this.personasDir, file)
-        
+
         try {
           const content = await fs.readFile(src, 'utf-8')
           // Update timestamps to current time
@@ -209,7 +204,9 @@ class PersonaService {
 
     if ('content' in input && input.content) {
       if (input.content.length > MAX_CONTENT_LENGTH) {
-        throw new Error(`Persona content is too large (max ${Math.round(MAX_CONTENT_LENGTH / 1000)}KB)`)
+        throw new Error(
+          `Persona content is too large (max ${Math.round(MAX_CONTENT_LENGTH / 1000)}KB)`
+        )
       }
     }
   }

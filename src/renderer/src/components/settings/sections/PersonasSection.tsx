@@ -35,10 +35,7 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue
 }
 
-export function PersonasSection({ 
-  activePersonaId, 
-  onActivatePersona 
-}: PersonasSectionProps) {
+export function PersonasSection({ activePersonaId, onActivatePersona }: PersonasSectionProps) {
   const [personas, setPersonas] = useState<PersonaMetadata[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -47,7 +44,7 @@ export function PersonasSection({
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showShortcuts, setShowShortcuts] = useState(false)
-  
+
   // Debounce search query for performance (150ms delay)
   const debouncedSearchQuery = useDebounce(searchQuery, 150)
 
@@ -88,48 +85,55 @@ export function PersonasSection({
     }
   }, [])
 
-  const handleDeletePersona = useCallback(async (id: string) => {
-    if (!confirm('Are you sure you want to delete this persona?')) return
-    
-    setError(null)
-    try {
-      await window.api.personas.delete(id)
-      await loadPersonas()
-      if (selectedPersona?.id === id) {
-        setSelectedPersona(null)
-      }
-      if (activePersonaId === id && onActivatePersona) {
-        onActivatePersona(null)
-      }
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete persona')
-      console.error('Failed to delete persona:', err)
-    }
-  }, [loadPersonas, selectedPersona, activePersonaId, onActivatePersona])
+  const handleDeletePersona = useCallback(
+    async (id: string) => {
+      if (!confirm('Are you sure you want to delete this persona?')) return
 
-  const handleActivatePersona = useCallback((id: string) => {
-    if (onActivatePersona) {
-      onActivatePersona(activePersonaId === id ? null : id)
-    }
-  }, [activePersonaId, onActivatePersona])
+      setError(null)
+      try {
+        await window.api.personas.delete(id)
+        await loadPersonas()
+        if (selectedPersona?.id === id) {
+          setSelectedPersona(null)
+        }
+        if (activePersonaId === id && onActivatePersona) {
+          onActivatePersona(null)
+        }
+      } catch (err: any) {
+        setError(err.message || 'Failed to delete persona')
+        console.error('Failed to delete persona:', err)
+      }
+    },
+    [loadPersonas, selectedPersona, activePersonaId, onActivatePersona]
+  )
+
+  const handleActivatePersona = useCallback(
+    (id: string) => {
+      if (onActivatePersona) {
+        onActivatePersona(activePersonaId === id ? null : id)
+      }
+    },
+    [activePersonaId, onActivatePersona]
+  )
 
   // Memoized filtered personas for performance
   const filteredPersonas = useMemo(() => {
     if (!debouncedSearchQuery.trim()) {
       return personas
     }
-    
+
     const query = debouncedSearchQuery.toLowerCase()
-    return personas.filter(p =>
-      p.name.toLowerCase().includes(query) ||
-      p.description.toLowerCase().includes(query) ||
-      p.tags.some(t => t.toLowerCase().includes(query))
+    return personas.filter(
+      (p) =>
+        p.name.toLowerCase().includes(query) ||
+        p.description.toLowerCase().includes(query) ||
+        p.tags.some((t) => t.toLowerCase().includes(query))
     )
   }, [personas, debouncedSearchQuery])
 
   // Memoized active persona name lookup
   const activePersonaName = useMemo(() => {
-    return personas.find(p => p.id === activePersonaId)?.name
+    return personas.find((p) => p.id === activePersonaId)?.name
   }, [personas, activePersonaId])
 
   if (loading) {
@@ -168,10 +172,10 @@ export function PersonasSection({
           <button
             onClick={() => setShowShortcuts(!showShortcuts)}
             className={cn(
-              "p-1.5 rounded-lg transition-colors",
+              'p-1.5 rounded-lg transition-colors',
               showShortcuts
-                ? "text-primary bg-primary/20"
-                : "text-text-muted hover:text-white hover:bg-secondary"
+                ? 'text-primary bg-primary/20'
+                : 'text-text-muted hover:text-white hover:bg-secondary'
             )}
             title="Keyboard shortcuts"
           >
@@ -181,9 +185,9 @@ export function PersonasSection({
         <button
           onClick={() => setShowCreateModal(true)}
           className={cn(
-            "flex items-center gap-2 px-4 py-2 rounded-lg",
-            "bg-primary hover:bg-primary/90 text-white",
-            "font-medium text-sm transition-colors"
+            'flex items-center gap-2 px-4 py-2 rounded-lg',
+            'bg-primary hover:bg-primary/90 text-white',
+            'font-medium text-sm transition-colors'
           )}
         >
           <Plus size={16} />
@@ -200,15 +204,21 @@ export function PersonasSection({
           </div>
           <div className="grid gap-2 text-sm">
             <div className="flex items-center justify-between">
-              <code className="px-2 py-1 bg-tertiary rounded text-text-muted font-mono text-xs">/persona &lt;name&gt;</code>
+              <code className="px-2 py-1 bg-tertiary rounded text-text-muted font-mono text-xs">
+                /persona &lt;name&gt;
+              </code>
               <span className="text-text-muted">Activate a persona by name</span>
             </div>
             <div className="flex items-center justify-between">
-              <code className="px-2 py-1 bg-tertiary rounded text-text-muted font-mono text-xs">/persona list</code>
+              <code className="px-2 py-1 bg-tertiary rounded text-text-muted font-mono text-xs">
+                /persona list
+              </code>
               <span className="text-text-muted">Show persona selection modal</span>
             </div>
             <div className="flex items-center justify-between">
-              <code className="px-2 py-1 bg-tertiary rounded text-text-muted font-mono text-xs">/clear persona</code>
+              <code className="px-2 py-1 bg-tertiary rounded text-text-muted font-mono text-xs">
+                /clear persona
+              </code>
               <span className="text-text-muted">Deactivate the current persona</span>
             </div>
           </div>
@@ -220,27 +230,24 @@ export function PersonasSection({
 
       {/* Search */}
       <div className="relative">
-        <Search 
-          size={16} 
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" 
-        />
+        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search personas..."
           className={cn(
-            "w-full pl-10 pr-4 py-2 rounded-lg",
-            "bg-secondary border border-secondary/50",
-            "text-text-normal placeholder-text-muted/50",
-            "focus:outline-none focus:ring-2 focus:ring-primary/50"
+            'w-full pl-10 pr-4 py-2 rounded-lg',
+            'bg-secondary border border-secondary/50',
+            'text-text-normal placeholder-text-muted/50',
+            'focus:outline-none focus:ring-2 focus:ring-primary/50'
           )}
         />
         {/* Search indicator when debouncing */}
         {searchQuery !== debouncedSearchQuery && (
-          <RefreshCw 
-            size={14} 
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted/50 animate-spin" 
+          <RefreshCw
+            size={14}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted/50 animate-spin"
           />
         )}
       </div>
@@ -272,17 +279,15 @@ export function PersonasSection({
               {searchQuery ? 'No personas found' : 'No personas yet'}
             </h3>
             <p className="text-sm text-text-muted mb-4">
-              {searchQuery 
-                ? 'Try a different search term'
-                : 'Create your first custom AI persona'}
+              {searchQuery ? 'Try a different search term' : 'Create your first custom AI persona'}
             </p>
             {!searchQuery && (
               <button
                 onClick={() => setShowCreateModal(true)}
                 className={cn(
-                  "inline-flex items-center gap-2 px-4 py-2 rounded-lg",
-                  "bg-secondary hover:bg-secondary/80 text-text-normal",
-                  "text-sm transition-colors"
+                  'inline-flex items-center gap-2 px-4 py-2 rounded-lg',
+                  'bg-secondary hover:bg-secondary/80 text-text-normal',
+                  'text-sm transition-colors'
                 )}
               >
                 <Wand2 size={16} />
@@ -364,18 +369,20 @@ function PersonaCard({ persona, isActive, onView, onActivate, onDelete }: Person
   return (
     <div
       className={cn(
-        "p-4 rounded-xl border transition-all",
+        'p-4 rounded-xl border transition-all',
         isActive
-          ? "bg-primary/10 border-primary/30"
-          : "bg-secondary/30 border-secondary/50 hover:border-secondary"
+          ? 'bg-primary/10 border-primary/30'
+          : 'bg-secondary/30 border-secondary/50 hover:border-secondary'
       )}
     >
       <div className="flex items-start gap-3">
         {/* Emoji Avatar */}
-        <div className={cn(
-          "w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0",
-          isActive ? "bg-primary/20" : "bg-secondary"
-        )}>
+        <div
+          className={cn(
+            'w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0',
+            isActive ? 'bg-primary/20' : 'bg-secondary'
+          )}
+        >
           {persona.emoji}
         </div>
 
@@ -395,7 +402,7 @@ function PersonaCard({ persona, isActive, onView, onActivate, onDelete }: Person
           </p>
           {persona.tags.length > 0 && (
             <div className="flex gap-1 mt-2 flex-wrap">
-              {persona.tags.slice(0, 3).map(tag => (
+              {persona.tags.slice(0, 3).map((tag) => (
                 <span
                   key={tag}
                   className="text-xs text-text-muted/70 bg-tertiary px-2 py-0.5 rounded"
@@ -404,9 +411,7 @@ function PersonaCard({ persona, isActive, onView, onActivate, onDelete }: Person
                 </span>
               ))}
               {persona.tags.length > 3 && (
-                <span className="text-xs text-text-muted/50">
-                  +{persona.tags.length - 3} more
-                </span>
+                <span className="text-xs text-text-muted/50">+{persona.tags.length - 3} more</span>
               )}
             </div>
           )}
@@ -417,10 +422,10 @@ function PersonaCard({ persona, isActive, onView, onActivate, onDelete }: Person
           <button
             onClick={onActivate}
             className={cn(
-              "p-2 rounded-lg transition-colors",
+              'p-2 rounded-lg transition-colors',
               isActive
-                ? "text-primary bg-primary/20 hover:bg-primary/30"
-                : "text-text-muted hover:text-white hover:bg-secondary"
+                ? 'text-primary bg-primary/20 hover:bg-primary/30'
+                : 'text-text-muted hover:text-white hover:bg-secondary'
             )}
             title={isActive ? 'Deactivate' : 'Activate'}
           >

@@ -3,7 +3,14 @@
 import { ipcMain, BrowserWindow } from 'electron'
 import { randomUUID } from 'crypto'
 import { mcpManager } from './manager'
-import { loadMCPConfig, saveMCPConfig, updateMCPConfig, isToolBlocked, isToolAlwaysApproved, addAlwaysApproveTool } from './config'
+import {
+  loadMCPConfig,
+  saveMCPConfig,
+  updateMCPConfig,
+  isToolBlocked,
+  isToolAlwaysApproved,
+  addAlwaysApproveTool
+} from './config'
 import { getToolRiskLevel } from './servers/desktop-commander'
 import { getGitHubToolRiskLevel, GITHUB_MCP_CONFIG } from './servers/github'
 import { getSSHToolRiskLevel, SSH_MCP_CONFIG, buildSSHArgs } from './servers/ssh-mcp'
@@ -17,7 +24,13 @@ import {
   isSSHConfigured,
   SSHCredentials
 } from './credentials'
-import { PendingToolCall, ToolCallResult, MCPConfig, GitHubStatus, GitHubConfigureResult } from './types'
+import {
+  PendingToolCall,
+  ToolCallResult,
+  MCPConfig,
+  GitHubStatus,
+  GitHubConfigureResult
+} from './types'
 
 // Pending tool calls awaiting user approval
 const pendingCalls = new Map<string, PendingToolCall>()
@@ -74,9 +87,10 @@ export function setupMCPHandlers(): void {
         toolName: string
         args: Record<string, unknown>
         explanation?: string
+        skipApproval?: boolean // Skip approval if frontend already approved
       }
     ) => {
-      const { serverName, toolName, args, explanation } = request
+      const { serverName, toolName, args, explanation, skipApproval } = request
       const id = randomUUID()
       const config = mcpManager.getConfig()
 
@@ -87,6 +101,33 @@ export function setupMCPHandlers(): void {
           success: false,
           error: `Tool '${toolName}' is blocked by configuration`,
           blocked: true
+        }
+      }
+
+      // If skipApproval is set, the frontend already showed approval card
+      // Execute immediately without re-queuing for approval
+      if (skipApproval) {
+        console.log(`[MCP IPC] Executing pre-approved ${toolName} (frontend approved)`)
+        const startTime = Date.now()
+
+        try {
+          const result = await mcpManager.callTool(serverName, toolName, args)
+          return {
+            id,
+            success: true,
+            approved: true,
+            autoApproved: false,
+            result,
+            duration: Date.now() - startTime
+          }
+        } catch (error) {
+          return {
+            id,
+            success: false,
+            approved: true,
+            autoApproved: false,
+            error: String(error)
+          }
         }
       }
 
@@ -643,7 +684,6 @@ export function clearPendingCalls(): void {
 export function getPendingCallCount(): number {
   return pendingCalls.size
 }
-
 
 // =====================
 // GitHub Helper Functions

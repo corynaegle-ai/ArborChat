@@ -1,7 +1,7 @@
 /**
  * Personas Module
  * Entry point for persona management system
- * 
+ *
  * Sets up IPC handlers for renderer communication
  */
 

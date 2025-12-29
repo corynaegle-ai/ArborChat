@@ -2,8 +2,18 @@
 
 import { useState, useRef, useEffect } from 'react'
 import {
-  X, Bot, Send, Pause, Play, AlertCircle,
-  CheckCircle2, Loader2, Sparkles, User, Minimize2, Clock
+  X,
+  Bot,
+  Send,
+  Pause,
+  Play,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  Sparkles,
+  User,
+  Minimize2,
+  Clock
 } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { ModelSelector } from '../ModelSelector'
@@ -26,82 +36,94 @@ interface AgentPanelProps {
 }
 
 // Status indicator component - aligned with AgentStatus type
-function StatusBadge({ status, hasPendingTool }: { status: AgentStatus; hasPendingTool?: boolean }) {
-  const statusConfig: Record<AgentStatus, { label: string; color: string; icon: React.ReactNode }> = {
-    created: { 
-      label: 'Starting', 
-      color: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-      icon: <Clock size={12} />
-    },
-    running: { 
-      label: 'Working', 
-      color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-      icon: <Loader2 size={12} className="animate-spin" />
-    },
-    waiting: { 
-      label: hasPendingTool ? 'Needs Approval' : 'Awaiting Input', 
-      color: hasPendingTool 
-        ? 'bg-orange-500/20 text-orange-400 border-orange-500/30 animate-pulse'
-        : 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-      icon: <AlertCircle size={12} />
-    },
-    paused: { 
-      label: 'Paused', 
-      color: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
-      icon: <Pause size={12} />
-    },
-    completed: { 
-      label: 'Completed', 
-      color: 'bg-green-500/20 text-green-400 border-green-500/30',
-      icon: <CheckCircle2 size={12} />
-    },
-    failed: { 
-      label: 'Error', 
-      color: 'bg-red-500/20 text-red-400 border-red-500/30',
-      icon: <AlertCircle size={12} />
+function StatusBadge({
+  status,
+  hasPendingTool
+}: {
+  status: AgentStatus
+  hasPendingTool?: boolean
+}) {
+  const statusConfig: Record<AgentStatus, { label: string; color: string; icon: React.ReactNode }> =
+    {
+      created: {
+        label: 'Starting',
+        color: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+        icon: <Clock size={12} />
+      },
+      running: {
+        label: 'Working',
+        color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+        icon: <Loader2 size={12} className="animate-spin" />
+      },
+      waiting: {
+        label: hasPendingTool ? 'Needs Approval' : 'Awaiting Input',
+        color: hasPendingTool
+          ? 'bg-orange-500/20 text-orange-400 border-orange-500/30 animate-pulse'
+          : 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+        icon: <AlertCircle size={12} />
+      },
+      paused: {
+        label: 'Paused',
+        color: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+        icon: <Pause size={12} />
+      },
+      completed: {
+        label: 'Completed',
+        color: 'bg-green-500/20 text-green-400 border-green-500/30',
+        icon: <CheckCircle2 size={12} />
+      },
+      failed: {
+        label: 'Error',
+        color: 'bg-red-500/20 text-red-400 border-red-500/30',
+        icon: <AlertCircle size={12} />
+      }
     }
-  }
 
   const config = statusConfig[status]
 
   return (
-    <div className={cn(
-      'flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium border',
-      config.color
-    )}>
+    <div
+      className={cn(
+        'flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium border',
+        config.color
+      )}
+    >
       {config.icon}
       <span>{config.label}</span>
     </div>
   )
 }
 
-
 // Message bubble for agent messages
-function AgentMessageBubble({ 
-  role, 
-  content, 
-  isStreaming 
-}: { 
+function AgentMessageBubble({
+  role,
+  content,
+  isStreaming
+}: {
   role: 'user' | 'assistant'
   content: string
-  isStreaming?: boolean 
+  isStreaming?: boolean
 }) {
   const isAssistant = role === 'assistant'
 
   return (
-    <div className={cn(
-      'group flex gap-2 px-3 py-1.5 rounded-lg transition-colors',
-      'hover:bg-secondary/20',
-      !isAssistant && 'flex-row-reverse'
-    )}>
+    <div
+      className={cn(
+        'group flex gap-2 px-3 py-1.5 rounded-lg transition-colors',
+        'hover:bg-secondary/20',
+        !isAssistant && 'flex-row-reverse'
+      )}
+    >
       {/* Avatar */}
-      <div className={cn(
-        'w-7 h-7 rounded-full flex items-center justify-center shrink-0',
-        'ring-1 ring-offset-1 ring-offset-background',
-        isAssistant
-          ? 'bg-gradient-to-br from-violet-500 to-purple-600 ring-violet-500/30'
-          : 'bg-gradient-to-br from-emerald-500 to-teal-600 ring-emerald-500/30'
-      )}>
+      <div
+        className={cn(
+          'w-7 h-7 rounded-full flex items-center justify-center shrink-0',
+          'ring-1 ring-offset-1 ring-offset-background',
+          isAssistant
+            ? 'bg-gradient-to-br from-violet-500 to-purple-600 ring-violet-500/30'
+            : 'bg-gradient-to-br from-emerald-500 to-teal-600 ring-emerald-500/30'
+        )}
+      >
         {isAssistant ? (
           <Bot size={14} className="text-white" />
         ) : (
@@ -110,22 +132,23 @@ function AgentMessageBubble({
       </div>
 
       {/* Content */}
-      <div className={cn(
-        'flex flex-col gap-0.5 min-w-0 max-w-[85%]',
-        !isAssistant && 'items-end'
-      )}>
-        <span className={cn(
-          'text-[10px] font-medium',
-          isAssistant ? 'text-violet-400' : 'text-emerald-400'
-        )}>
+      <div className={cn('flex flex-col gap-0.5 min-w-0 max-w-[85%]', !isAssistant && 'items-end')}>
+        <span
+          className={cn(
+            'text-[10px] font-medium',
+            isAssistant ? 'text-violet-400' : 'text-emerald-400'
+          )}
+        >
           {isAssistant ? 'Agent' : 'You'}
         </span>
-        <div className={cn(
-          'relative rounded-xl px-3 py-2 text-xs leading-relaxed',
-          !isAssistant
-            ? 'bg-primary text-white rounded-tr-sm'
-            : 'bg-secondary/50 text-text-normal rounded-tl-sm border border-tertiary/50'
-        )}>
+        <div
+          className={cn(
+            'relative rounded-xl px-3 py-2 text-xs leading-relaxed',
+            !isAssistant
+              ? 'bg-primary text-white rounded-tr-sm'
+              : 'bg-secondary/50 text-text-normal rounded-tl-sm border border-tertiary/50'
+          )}
+        >
           <p className="whitespace-pre-wrap break-words">{content}</p>
           {isStreaming && isAssistant && (
             <span className="inline-block w-1.5 h-3 bg-violet-500/70 ml-1 animate-pulse rounded-sm" />
@@ -135,7 +158,6 @@ function AgentMessageBubble({
     </div>
   )
 }
-
 
 export function AgentPanel({
   agent,
@@ -181,25 +203,32 @@ export function AgentPanel({
 
   // Derive state from status
   const hasPendingTool = agent.pendingToolCall != null
-  const canSendMessage = agent.status === 'waiting' && !hasPendingTool || 
-                         agent.status === 'completed' || 
-                         agent.status === 'failed'
+  const canSendMessage =
+    (agent.status === 'waiting' && !hasPendingTool) ||
+    agent.status === 'completed' ||
+    agent.status === 'failed'
   const isPaused = agent.status === 'paused'
   const isWorking = agent.status === 'running' || isStreaming
 
   // Get context summary for display
-  const contextSummary = agent.config.context.seedMessages.length > 0
-    ? agent.config.context.seedMessages.map(m => m.content).join('\n').slice(0, 150)
-    : null
+  const contextSummary =
+    agent.config.context.seedMessages.length > 0
+      ? agent.config.context.seedMessages
+          .map((m) => m.content)
+          .join('\n')
+          .slice(0, 150)
+      : null
 
   return (
-    <div className={cn(
-      'w-[480px] flex flex-col h-full',
-      'bg-gradient-to-b from-tertiary to-background',
-      'border-l border-violet-500/20',
-      'shadow-2xl shadow-violet-500/5',
-      'animate-in slide-in-from-right-full duration-300 ease-out'
-    )}>
+    <div
+      className={cn(
+        'w-[480px] flex flex-col h-full',
+        'bg-gradient-to-b from-tertiary to-background',
+        'border-l border-violet-500/20',
+        'shadow-2xl shadow-violet-500/5',
+        'animate-in slide-in-from-right-full duration-300 ease-out'
+      )}
+    >
       {/* Header */}
       <div className="h-14 border-b border-violet-500/20 flex items-center justify-between px-4 bg-tertiary/80 backdrop-blur-sm shrink-0">
         <div className="flex items-center gap-3">
@@ -208,13 +237,15 @@ export function AgentPanel({
           </div>
           <div className="flex flex-col">
             <span className="font-semibold text-text-normal text-sm">{agent.config.name}</span>
-            <span className="text-[10px] text-text-muted">{agent.stepsCompleted} steps completed</span>
+            <span className="text-[10px] text-text-muted">
+              {agent.stepsCompleted} steps completed
+            </span>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <StatusBadge status={agent.status} hasPendingTool={hasPendingTool} />
-          
+
           {/* Pause/Resume button */}
           {(isWorking || isPaused) && (
             <button
@@ -230,7 +261,7 @@ export function AgentPanel({
               {isPaused ? <Play size={16} /> : <Pause size={16} />}
             </button>
           )}
-          
+
           {/* Minimize button */}
           <button
             onClick={onMinimize}
@@ -239,7 +270,7 @@ export function AgentPanel({
           >
             <Minimize2 size={16} />
           </button>
-          
+
           {/* Close button */}
           <button
             onClick={onClose}
@@ -251,7 +282,6 @@ export function AgentPanel({
         </div>
       </div>
 
-
       {/* Initial Instructions Context */}
       {contextSummary && (
         <div className="shrink-0 border-b border-violet-500/10">
@@ -262,7 +292,7 @@ export function AgentPanel({
             </div>
             <div className="relative pl-2 py-1.5 border-l-2 border-violet-500/30 bg-secondary/20 rounded-r-lg">
               <p className="text-[11px] text-text-muted leading-relaxed line-clamp-2">
-                {contextSummary.length > 150 
+                {contextSummary.length > 150
                   ? contextSummary.slice(0, 150) + '...'
                   : contextSummary}
               </p>
@@ -282,19 +312,17 @@ export function AgentPanel({
               key={msg.id}
               role={msg.role as 'user' | 'assistant'}
               content={msg.content}
-              isStreaming={isStreaming && index === agent.messages.length - 1 && msg.role === 'assistant'}
+              isStreaming={
+                isStreaming && index === agent.messages.length - 1 && msg.role === 'assistant'
+              }
             />
           ))}
-          
+
           {/* Streaming message */}
           {isStreaming && streamingContent && (
-            <AgentMessageBubble
-              role="assistant"
-              content={streamingContent}
-              isStreaming={true}
-            />
+            <AgentMessageBubble role="assistant" content={streamingContent} isStreaming={true} />
           )}
-          
+
           {/* Tool Approval Card */}
           {agent.pendingToolCall && (
             <div className="px-3 py-2">
@@ -309,7 +337,7 @@ export function AgentPanel({
               />
             </div>
           )}
-          
+
           {/* Working indicator when no streaming content yet */}
           {isWorking && !streamingContent && agent.messages.length > 0 && (
             <div className="flex gap-2 px-3 py-2">
@@ -326,25 +354,26 @@ export function AgentPanel({
         </div>
       </div>
 
-
       {/* Input Area */}
       <div className="p-3 border-t border-violet-500/10 bg-tertiary/50 shrink-0">
         <form onSubmit={handleSubmit} className="space-y-2">
-          <div className={cn(
-            'relative rounded-lg overflow-hidden',
-            'ring-1 ring-violet-500/20 focus-within:ring-2 focus-within:ring-violet-500/40',
-            'transition-shadow duration-150'
-          )}>
+          <div
+            className={cn(
+              'relative rounded-lg overflow-hidden',
+              'ring-1 ring-violet-500/20 focus-within:ring-2 focus-within:ring-violet-500/40',
+              'transition-shadow duration-150'
+            )}
+          >
             <textarea
               ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={
-                hasPendingTool 
+                hasPendingTool
                   ? 'Approve or reject the tool request above...'
-                  : isWorking 
-                    ? 'Agent is working...' 
+                  : isWorking
+                    ? 'Agent is working...'
                     : 'Send instructions to agent...'
               }
               disabled={!canSendMessage}
@@ -373,7 +402,7 @@ export function AgentPanel({
               <Send size={14} />
             </button>
           </div>
-          
+
           {/* Model Selector */}
           <ModelSelector
             selectedModel={selectedModel}

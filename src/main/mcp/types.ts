@@ -25,7 +25,7 @@ export interface MCPConfig {
     safe: boolean
     moderate: boolean
   }
-  alwaysApproveTools: string[]  // Tools that are always auto-approved regardless of risk level
+  alwaysApproveTools: string[] // Tools that are always auto-approved regardless of risk level
   allowedDirectories: string[]
   blockedTools: string[]
   timeout: number
@@ -66,7 +66,6 @@ export interface ApprovalRequest {
   riskLevel: 'safe' | 'moderate' | 'dangerous'
   explanation?: string
 }
-
 
 // =====================
 // GitHub-specific types
