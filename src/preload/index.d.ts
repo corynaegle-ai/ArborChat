@@ -58,6 +58,9 @@ interface MCPConfig {
     args: string[]
     enabled: boolean
   }>
+  memory?: {
+    autoLoadOnSessionStart: boolean
+  }
 }
 
 // GitHub-specific types

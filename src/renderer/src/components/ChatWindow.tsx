@@ -6,6 +6,7 @@ import { ModelSelector } from './ModelSelector'
 import { ToolApprovalCard, ToolResultCard, MemoryIndicator } from './mcp'
 import type { MemoryStatus } from './mcp'
 import { SlashCommandMenu, MarkdownRenderer } from './chat'
+import { NotebookIcon, SaveToNotebookModal } from './notebook'
 import { useSlashCommands } from '../hooks'
 import type { PendingToolCall, ToolExecution } from '../hooks'
 
@@ -56,6 +57,8 @@ interface ChatWindowProps {
   threadTitle?: string
   selectedModel: string
   onModelChange: (modelId: string) => void
+  // Notebook Props
+  conversationId?: string
   // MCP Tool Props
   mcpConnected?: boolean
   pendingToolCall?: PendingToolCall | null
@@ -93,117 +96,140 @@ function MessageBubble({
   message,
   onThreadSelect,
   onAgentLaunch,
+  conversationId,
   showThreadButton = true,
   isStreaming = false
 }: {
   message: Message
   onThreadSelect: (id: string) => void
   onAgentLaunch?: (messageContent: string) => void
+  conversationId?: string
   showThreadButton?: boolean
   isStreaming?: boolean
 }) {
   const isUser = message.role === 'user'
   const isAssistant = message.role === 'assistant'
+  
+  // Notebook modal state
+  const [showNotebookModal, setShowNotebookModal] = useState(false)
 
   return (
-    <div
-      className={cn(
-        'group flex gap-3 px-4 py-2 -mx-4 rounded-lg transition-colors duration-150',
-        'hover:bg-secondary/30',
-        isUser && 'flex-row-reverse'
-      )}
-    >
-      {/* Avatar */}
+    <>
       <div
         className={cn(
-          'w-9 h-9 rounded-full flex items-center justify-center shrink-0',
-          'ring-2 ring-offset-2 ring-offset-background transition-shadow duration-150',
-          isAssistant
-            ? 'bg-gradient-to-br from-primary to-indigo-600 ring-primary/30'
-            : 'bg-gradient-to-br from-emerald-500 to-teal-600 ring-emerald-500/30'
+          'group flex gap-3 px-4 py-2 -mx-4 rounded-lg transition-colors duration-150',
+          'hover:bg-secondary/30',
+          isUser && 'flex-row-reverse'
         )}
       >
-        {isAssistant ? (
-          <Sparkles size={16} className="text-white" />
-        ) : (
-          <User size={16} className="text-white" />
-        )}
-      </div>
-
-      {/* Content - responsive width that expands with viewport */}
-      <div
-        className={cn(
-          'flex flex-col gap-1 min-w-0',
-          'max-w-[85%] lg:max-w-[88%] xl:max-w-[90%]',
-          isUser && 'items-end'
-        )}
-      >
-        {/* Role label */}
-        <span
-          className={cn('text-xs font-medium', isAssistant ? 'text-primary' : 'text-emerald-400')}
-        >
-          {isAssistant ? 'ArborChat' : 'You'}
-        </span>
-
-        {/* Message bubble */}
+        {/* Avatar */}
         <div
           className={cn(
-            'relative rounded-2xl px-4 py-2.5 text-sm leading-relaxed',
-            'shadow-sm transition-shadow duration-150',
-            isUser
-              ? 'bg-primary text-white rounded-tr-sm'
-              : 'bg-secondary text-text-normal rounded-tl-sm border border-tertiary'
+            'w-9 h-9 rounded-full flex items-center justify-center shrink-0',
+            'ring-2 ring-offset-2 ring-offset-background transition-shadow duration-150',
+            isAssistant
+              ? 'bg-gradient-to-br from-primary to-indigo-600 ring-primary/30'
+              : 'bg-gradient-to-br from-emerald-500 to-teal-600 ring-emerald-500/30'
           )}
         >
-          {isUser ? (
-            <p className="whitespace-pre-wrap break-words">{message.content}</p>
+          {isAssistant ? (
+            <Sparkles size={16} className="text-white" />
           ) : (
-            <MarkdownRenderer content={message.content} />
-          )}
-
-          {/* Streaming indicator */}
-          {isStreaming && isAssistant && (
-            <span className="inline-block w-2 h-4 bg-primary/70 ml-1 animate-pulse rounded-sm" />
+            <User size={16} className="text-white" />
           )}
         </div>
 
-        {/* Thread button - only on assistant messages */}
-        {isAssistant && showThreadButton && !isStreaming && (
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-            <button
-              onClick={() => onThreadSelect(message.id)}
-              className={cn(
-                'flex items-center gap-1.5 px-2 py-1 rounded-md text-xs',
-                'text-text-muted hover:text-primary hover:bg-primary/10',
-                'transition-all duration-150',
-                'focus:outline-none focus:ring-2 focus:ring-primary/30'
-              )}
-              aria-label="Start thread on this message"
-            >
-              <MessageCircle size={14} />
-              <span>Thread</span>
-            </button>
+        {/* Content - responsive width that expands with viewport */}
+        <div
+          className={cn(
+            'flex flex-col gap-1 min-w-0',
+            'max-w-[85%] lg:max-w-[88%] xl:max-w-[90%]',
+            isUser && 'items-end'
+          )}
+        >
+          {/* Role label */}
+          <span
+            className={cn('text-xs font-medium', isAssistant ? 'text-primary' : 'text-emerald-400')}
+          >
+            {isAssistant ? 'ArborChat' : 'You'}
+          </span>
 
-            {/* Agent Launch Button */}
-            {onAgentLaunch && (
-              <button
-                onClick={() => onAgentLaunch(message.content)}
-                className={cn(
-                  'flex items-center gap-1.5 px-2 py-1 rounded-md text-xs',
-                  'text-text-muted hover:text-violet-400 hover:bg-violet-500/10',
-                  'transition-all duration-150',
-                  'focus:outline-none focus:ring-2 focus:ring-violet-500/30'
-                )}
-                aria-label="Launch agent based on this message"
-              >
-                <Bot size={14} />
-                <span>Agent</span>
-              </button>
+          {/* Message bubble */}
+          <div
+            className={cn(
+              'relative rounded-2xl px-4 py-2.5 text-sm leading-relaxed',
+              'shadow-sm transition-shadow duration-150',
+              isUser
+                ? 'bg-primary text-white rounded-tr-sm'
+                : 'bg-secondary text-text-normal rounded-tl-sm border border-tertiary'
+            )}
+          >
+            {isUser ? (
+              <p className="whitespace-pre-wrap break-words">{message.content}</p>
+            ) : (
+              <MarkdownRenderer content={message.content} />
+            )}
+
+            {/* Streaming indicator */}
+            {isStreaming && isAssistant && (
+              <span className="inline-block w-2 h-4 bg-primary/70 ml-1 animate-pulse rounded-sm" />
             )}
           </div>
-        )}
+
+          {/* Hover action buttons - show on all messages when not streaming */}
+          {showThreadButton && !isStreaming && (
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+              {/* Thread button - only on assistant messages */}
+              {isAssistant && (
+                <button
+                  onClick={() => onThreadSelect(message.id)}
+                  className={cn(
+                    'flex items-center gap-1.5 px-2 py-1 rounded-md text-xs',
+                    'text-text-muted hover:text-primary hover:bg-primary/10',
+                    'transition-all duration-150',
+                    'focus:outline-none focus:ring-2 focus:ring-primary/30'
+                  )}
+                  aria-label="Start thread on this message"
+                >
+                  <MessageCircle size={14} />
+                  <span>Thread</span>
+                </button>
+              )}
+
+              {/* Agent Launch Button - only on assistant messages */}
+              {isAssistant && onAgentLaunch && (
+                <button
+                  onClick={() => onAgentLaunch(message.content)}
+                  className={cn(
+                    'flex items-center gap-1.5 px-2 py-1 rounded-md text-xs',
+                    'text-text-muted hover:text-violet-400 hover:bg-violet-500/10',
+                    'transition-all duration-150',
+                    'focus:outline-none focus:ring-2 focus:ring-violet-500/30'
+                  )}
+                  aria-label="Launch agent based on this message"
+                >
+                  <Bot size={14} />
+                  <span>Agent</span>
+                </button>
+              )}
+
+              {/* Notebook Save Button - available on all messages */}
+              <NotebookIcon onClick={() => setShowNotebookModal(true)} />
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Notebook Modal */}
+      <SaveToNotebookModal
+        isOpen={showNotebookModal}
+        onClose={() => setShowNotebookModal(false)}
+        content={message.content}
+        sourceMessageId={message.id}
+        sourceConversationId={conversationId}
+        sourceRole={message.role as 'user' | 'assistant'}
+      />
+    </>
   )
 }
 
@@ -265,6 +291,9 @@ export function ChatWindow({
   threadTitle = 'Chat',
   selectedModel,
   onModelChange,
+  // Notebook props
+  conversationId,
+  // MCP Tool props
   mcpConnected = true,
   pendingToolCall,
   toolExecutions,
@@ -461,6 +490,7 @@ export function ChatWindow({
                 message={msg}
                 onThreadSelect={onThreadSelect}
                 onAgentLaunch={onAgentLaunch}
+                conversationId={conversationId}
                 showThreadButton={!isThread}
                 isStreaming={isLastMessageStreaming && index === messages.length - 1}
               />

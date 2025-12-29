@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { Layout } from './components/Layout'
-import { MCPProvider, MemoryIndicator } from './components/mcp'
+import { MCPProvider } from './components/mcp'
 import { WorkJournalProvider, SessionResumeDialog, WorkJournalPanel } from './components/workJournal'
 import { SettingsPanel } from './components/settings'
 import { PersonaListModal } from './components/chat'
@@ -642,6 +642,9 @@ function AppContent({ apiKey }: { apiKey: string }) {
         onToolApprove={onToolApprove}
         onToolAlwaysApprove={onToolAlwaysApprove}
         onToolReject={onToolReject}
+        // Memory Props
+        memoryStatus={memoryStatus}
+        memoryItemCount={memoryItemCount}
         // Persona Props (Phase 5)
         activePersonaId={activePersonaId}
         activePersonaName={activePersonaName}

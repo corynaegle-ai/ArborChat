@@ -82,8 +82,7 @@ export function loadMCPConfig(): MCPConfig {
         alwaysApproveTools: loaded.alwaysApproveTools || DEFAULT_MCP_CONFIG.alwaysApproveTools,
         servers: mergedServers,
         memory: {
-          ...DEFAULT_MCP_CONFIG.memory,
-          ...loaded.memory
+          autoLoadOnSessionStart: loaded.memory?.autoLoadOnSessionStart ?? DEFAULT_MCP_CONFIG.memory!.autoLoadOnSessionStart
         }
       }
     }

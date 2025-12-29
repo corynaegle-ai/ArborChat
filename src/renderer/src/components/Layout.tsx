@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react'
 import { cn } from '../lib/utils'
 import logo from '../assets/logo.png'
 import type { PendingToolCall, ToolExecution } from '../hooks'
+import type { MemoryStatus } from './mcp'
 
 export interface LayoutProps {
   conversations: Conversation[]
@@ -37,6 +38,10 @@ export interface LayoutProps {
     modifiedArgs?: Record<string, unknown>
   ) => void
   onToolReject?: (id: string) => void
+
+  // Memory Props
+  memoryStatus?: MemoryStatus
+  memoryItemCount?: number
 
   // Persona Props (Phase 5)
   activePersonaId?: string | null
@@ -112,6 +117,9 @@ export function Layout({
   onToolApprove,
   onToolAlwaysApprove,
   onToolReject,
+  // Memory Props
+  memoryStatus,
+  memoryItemCount,
   // Persona Props (Phase 5)
   activePersonaId,
   activePersonaName,
@@ -161,12 +169,18 @@ export function Layout({
               threadTitle="Chat"
               selectedModel={selectedModel}
               onModelChange={onModelChange}
+              // Notebook Props
+              conversationId={activeId}
+              // MCP Tool Props
               mcpConnected={mcpConnected}
               pendingToolCall={pendingToolCall}
               toolExecutions={toolExecutions}
               onToolApprove={onToolApprove}
               onToolAlwaysApprove={onToolAlwaysApprove}
               onToolReject={onToolReject}
+              // Memory Props
+              memoryStatus={memoryStatus}
+              memoryItemCount={memoryItemCount}
               // Persona Props (Phase 5)
               activePersonaId={activePersonaId}
               activePersonaName={activePersonaName}
