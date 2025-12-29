@@ -116,12 +116,29 @@ Aim for high coverage while focusing on meaningful tests.`,
     category: 'development',
     instructions: `Please implement the following feature:
 
-1. Understand the requirements
-2. Plan the implementation approach
-3. Create necessary files and components
-4. Implement the feature step by step
-5. Test and verify the implementation
-6. Report on completion
+## EXECUTION STEPS (you MUST use tools for each step)
+
+1. **Understand**: Read existing files to understand the codebase structure
+2. **Plan**: Identify which files need to be created or modified
+3. **Implement**: Use write_file or edit_block to create/modify code
+4. **Verify**: Read each modified file back to confirm changes
+5. **Typecheck**: Run "npm run typecheck" to verify TypeScript compiles
+6. **Integrate**: Ensure new code is properly imported/exported
+
+## COMPLETION CHECKLIST
+
+Before saying "TASK COMPLETED", confirm:
+- [ ] All new files created (list them with paths)
+- [ ] All modified files updated (list them with paths)  
+- [ ] Files read back to verify changes
+- [ ] TypeScript compiles without errors
+- [ ] Exports/imports properly connected
+
+## WHAT NOT TO DO
+
+- Do NOT claim you "deployed" or "packaged" the app - that's a separate task
+- Do NOT claim actions without corresponding tool calls
+- Do NOT skip verification steps
 
 Ask clarifying questions if requirements are unclear.`,
     toolPermission: 'autonomous',

@@ -641,16 +641,21 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
 
   /**
    * Check if message indicates task completion
+   * 
+   * Now requires more explicit completion signals to prevent premature
+   * completion claims without actual tool-based work evidence.
    */
   const isCompletionMessage = useCallback((content: string): boolean => {
-    const completionPatterns = [
-      /TASK COMPLETED/i,
-      /task is complete/i,
-      /completed successfully/i,
-      /finished the task/i,
-      /all done/i
-    ]
-    return completionPatterns.some(pattern => pattern.test(content))
+    // Only recognize explicit TASK COMPLETED with file evidence
+    // The agent is instructed to list files when completing, so we check for that pattern
+    const hasExplicitCompletion = /TASK COMPLETED/i.test(content)
+    
+    // Look for evidence of actual work (file paths mentioned)
+    const hasFileEvidence = /(?:\/[\w.-]+)+\.(ts|tsx|js|jsx|json|md|css|html)/i.test(content)
+    
+    // Require both the completion signal AND file evidence
+    // This prevents hallucinated completions without actual tool work
+    return hasExplicitCompletion && hasFileEvidence
   }, [])
 
   /**
