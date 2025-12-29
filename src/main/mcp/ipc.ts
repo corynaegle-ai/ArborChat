@@ -6,10 +6,16 @@ import { mcpManager } from './manager'
 import { loadMCPConfig, saveMCPConfig, updateMCPConfig, isToolBlocked, isToolAlwaysApproved, addAlwaysApproveTool } from './config'
 import { getToolRiskLevel } from './servers/desktop-commander'
 import { getGitHubToolRiskLevel, GITHUB_MCP_CONFIG } from './servers/github'
+import { getSSHToolRiskLevel, SSH_MCP_CONFIG, buildSSHArgs } from './servers/ssh-mcp'
 import {
   saveGitHubToken,
   deleteGitHubToken,
-  isGitHubConfigured
+  isGitHubConfigured,
+  saveSSHCredentials,
+  getSSHCredentials,
+  deleteSSHCredentials,
+  isSSHConfigured,
+  SSHCredentials
 } from './credentials'
 import { PendingToolCall, ToolCallResult, MCPConfig, GitHubStatus, GitHubConfigureResult } from './types'
 
@@ -85,9 +91,17 @@ export function setupMCPHandlers(): void {
       }
 
       // Get risk level based on server
-      const riskLevel = serverName === 'github'
-        ? getGitHubToolRiskLevel(toolName)
-        : getToolRiskLevel(toolName)
+      let riskLevel: 'safe' | 'moderate' | 'dangerous'
+      switch (serverName) {
+        case 'github':
+          riskLevel = getGitHubToolRiskLevel(toolName)
+          break
+        case 'ssh-mcp':
+          riskLevel = getSSHToolRiskLevel(toolName)
+          break
+        default:
+          riskLevel = getToolRiskLevel(toolName)
+      }
       const win = BrowserWindow.fromWebContents(event.sender)
 
       // Check if we should auto-approve based on risk level or always-approve list
@@ -482,6 +496,131 @@ export function setupMCPHandlers(): void {
       isConfigured: configured,
       isConnected: connected,
       toolCount: tools.length
+    }
+  })
+
+  // =====================
+  // SSH-specific handlers
+  // =====================
+
+  /**
+   * Check if SSH is configured
+   */
+  ipcMain.handle('mcp:ssh:is-configured', async (): Promise<boolean> => {
+    return await isSSHConfigured()
+  })
+
+  /**
+   * Configure SSH with credentials
+   */
+  ipcMain.handle(
+    'mcp:ssh:configure',
+    async (_, creds: SSHCredentials): Promise<{ success: boolean; error?: string }> => {
+      try {
+        console.log('[MCP SSH] Configuring with credentials...')
+
+        // Save the credentials securely
+        await saveSSHCredentials(creds)
+
+        // Build the args for the SSH server
+        const sshArgs = buildSSHArgs({
+          host: creds.host,
+          port: creds.port,
+          user: creds.username,
+          password: creds.authType === 'password' ? creds.password : undefined,
+          key: creds.authType === 'key' ? creds.keyPath : undefined,
+          maxChars: 'none'
+        })
+
+        // Update config to enable SSH server with the new args
+        const config = loadMCPConfig()
+        const sshServer = config.servers.find((s) => s.name === 'ssh-mcp')
+        if (sshServer) {
+          sshServer.enabled = true
+          sshServer.args = sshArgs
+        } else {
+          // Add the server if it doesn't exist
+          config.servers.push({
+            ...SSH_MCP_CONFIG,
+            enabled: true,
+            args: sshArgs
+          })
+        }
+        saveMCPConfig(config)
+
+        // Disconnect existing SSH connection if any
+        if (mcpManager.isServerConnected('ssh-mcp')) {
+          await mcpManager.disconnectServer('ssh-mcp')
+        }
+
+        // Connect to the server with the new config
+        await mcpManager.connectServer({
+          ...SSH_MCP_CONFIG,
+          enabled: true,
+          args: sshArgs
+        })
+
+        const tools = mcpManager.getServerTools('ssh-mcp')
+        console.log(`[MCP SSH] Connected with ${tools.length} tools`)
+
+        return { success: true }
+      } catch (error) {
+        console.error('[MCP SSH] Configuration failed:', error)
+        return { success: false, error: String(error) }
+      }
+    }
+  )
+
+  /**
+   * Disconnect SSH and remove credentials
+   */
+  ipcMain.handle('mcp:ssh:disconnect', async (): Promise<{ success: boolean }> => {
+    try {
+      console.log('[MCP SSH] Disconnecting...')
+
+      // Delete the stored credentials
+      await deleteSSHCredentials()
+
+      // Disconnect the server
+      await mcpManager.disconnectServer('ssh-mcp')
+
+      // Update config to disable SSH server
+      const config = loadMCPConfig()
+      const sshServer = config.servers.find((s) => s.name === 'ssh-mcp')
+      if (sshServer) {
+        sshServer.enabled = false
+      }
+      saveMCPConfig(config)
+
+      console.log('[MCP SSH] Disconnected successfully')
+      return { success: true }
+    } catch (error) {
+      console.error('[MCP SSH] Disconnect failed:', error)
+      return { success: false }
+    }
+  })
+
+  /**
+   * Get SSH connection status
+   */
+  ipcMain.handle('mcp:ssh:status', async (): Promise<{
+    isConfigured: boolean
+    isConnected: boolean
+    toolCount: number
+    host?: string
+    username?: string
+  }> => {
+    const configured = await isSSHConfigured()
+    const connected = mcpManager.isServerConnected('ssh-mcp')
+    const tools = mcpManager.getServerTools('ssh-mcp')
+    const creds = await getSSHCredentials()
+
+    return {
+      isConfigured: configured,
+      isConnected: connected,
+      toolCount: tools.length,
+      host: creds?.host,
+      username: creds?.username
     }
   })
 

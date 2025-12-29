@@ -222,6 +222,33 @@ const mcpApi = {
         toolCount: number
         username?: string
       }>
+  },
+
+  // SSH-specific API
+  ssh: {
+    isConfigured: () => ipcRenderer.invoke('mcp:ssh:is-configured') as Promise<boolean>,
+    configure: (creds: {
+      host: string
+      port: number
+      username: string
+      authType: 'password' | 'key'
+      password?: string
+      keyPath?: string
+    }) =>
+      ipcRenderer.invoke('mcp:ssh:configure', creds) as Promise<{
+        success: boolean
+        error?: string
+      }>,
+    disconnect: () =>
+      ipcRenderer.invoke('mcp:ssh:disconnect') as Promise<{ success: boolean }>,
+    getStatus: () =>
+      ipcRenderer.invoke('mcp:ssh:status') as Promise<{
+        isConfigured: boolean
+        isConnected: boolean
+        toolCount: number
+        host?: string
+        username?: string
+      }>
   }
 }
 
