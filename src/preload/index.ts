@@ -483,8 +483,9 @@ const mcpApi = {
   // Get connection status
   getStatus: () => ipcRenderer.invoke('mcp:get-status'),
 
-  // Get tool system prompt for AI context
-  getSystemPrompt: () => ipcRenderer.invoke('mcp:get-system-prompt') as Promise<string>,
+  // Get tool system prompt for AI context (enhanced with project intelligence)
+  getSystemPrompt: (workingDirectory?: string) => 
+    ipcRenderer.invoke('mcp:get-system-prompt', workingDirectory) as Promise<string>,
 
   // Request tool execution (may require approval)
   // skipApproval: if true, bypasses approval queue (used when frontend already showed approval card)
@@ -1053,6 +1054,20 @@ const arborMemoryApi = {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Project Analyzer API - Project-aware context injection for agents
+// ═══════════════════════════════════════════════════════════════════════════
+
+const projectAnalyzerApi = {
+  /** Get project intelligence context for a working directory */
+  getContext: (workingDirectory: string) =>
+    ipcRenderer.invoke('projectAnalyzer:getContext', workingDirectory) as Promise<string | null>,
+
+  /** Check if a directory is a known project with custom patterns */
+  isKnownProject: (workingDirectory: string) =>
+    ipcRenderer.invoke('projectAnalyzer:isKnownProject', workingDirectory) as Promise<boolean>
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Tokenizer API - Accurate token counting for context management
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -1135,7 +1150,9 @@ const api = {
   // Arbor Memory API
   arborMemory: arborMemoryApi,
   // Tokenizer API
-  tokenizer: tokenizerApi
+  tokenizer: tokenizerApi,
+  // Project Analyzer API
+  projectAnalyzer: projectAnalyzerApi
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

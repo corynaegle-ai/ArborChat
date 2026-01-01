@@ -200,10 +200,13 @@ export const VirtualizedStepList = memo(function VirtualizedStepList({
   // Measure item height after render
   const measureItem = useCallback((stepId: string, height: number) => {
     const current = measuredHeights.current.get(stepId)
-    if (current !== height) {
+    // Only update if the height changed by more than 1px (avoid floating-point noise)
+    if (current === undefined || Math.abs(current - height) > 1) {
       measuredHeights.current.set(stepId, height)
-      // Trigger re-render to update layout
-      setScrollTop(s => s) // Force update
+      // Use a microtask to batch potential multiple measurements
+      queueMicrotask(() => {
+        setScrollTop(s => s) // Force layout recalculation
+      })
     }
   }, [])
   
@@ -295,13 +298,35 @@ const MeasuredStepWrapper = memo(function MeasuredStepWrapper({
   children: React.ReactNode
 }) {
   const ref = useRef<HTMLDivElement>(null)
+  const lastHeight = useRef<number | null>(null)
   
+  // Measure height only on mount and when stepId changes
+  // Use ResizeObserver for dynamic height changes instead of running every render
   useEffect(() => {
-    if (ref.current) {
-      const height = ref.current.getBoundingClientRect().height
-      onMeasure(stepId, height)
+    if (!ref.current) return
+    
+    const measureHeight = () => {
+      if (ref.current) {
+        const height = ref.current.getBoundingClientRect().height
+        // Only call onMeasure if height actually changed
+        if (lastHeight.current !== height) {
+          lastHeight.current = height
+          onMeasure(stepId, height)
+        }
+      }
     }
-  })
+    
+    // Initial measurement
+    measureHeight()
+    
+    // Watch for resize changes
+    const resizeObserver = new ResizeObserver(measureHeight)
+    resizeObserver.observe(ref.current)
+    
+    return () => {
+      resizeObserver.disconnect()
+    }
+  }, [stepId, onMeasure])
   
   return (
     <div ref={ref} style={style} role="listitem">

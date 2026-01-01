@@ -497,8 +497,10 @@ export function setupMCPHandlers(): void {
   })
 
   // Get tool system prompt for AI context (includes internal Arbor tools)
-  ipcMain.handle('mcp:get-system-prompt', async () => {
-    const { generateToolSystemPrompt } = await import('./prompts')
+  // Enhanced with project intelligence when working directory is provided
+  ipcMain.handle('mcp:get-system-prompt', async (_event, workingDirectory?: string) => {
+    console.log('[MCP IPC] get-system-prompt called with workingDirectory:', workingDirectory)
+    const { generateEnhancedSystemPrompt } = await import('./prompts')
     const mcpTools = mcpManager.getAvailableTools()
     
     // Add internal Arbor tools
@@ -507,7 +509,7 @@ export function setupMCPHandlers(): void {
       server: 'arbor'
     }))
     
-    return generateToolSystemPrompt([...internalTools, ...mcpTools])
+    return generateEnhancedSystemPrompt([...internalTools, ...mcpTools], workingDirectory)
   })
 
   // =====================

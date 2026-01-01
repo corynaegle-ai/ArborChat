@@ -21,6 +21,7 @@ import {
 import { getAllAvailableModels } from './models'
 import { OllamaProvider } from './providers/ollama'
 import { setupMCPHandlers, mcpManager } from './mcp'
+import { setupProjectAnalyzerHandlers } from './projectAnalyzer'
 import { setupPersonaHandlers } from './personas'
 import { setupNotificationHandlers, registerMainWindow } from './notifications'
 import { setupWorkJournalHandlers, cleanupWorkJournalSubscriptions } from './workJournal'
@@ -379,6 +380,9 @@ app.whenReady().then(() => {
 
   // Setup MCP handlers for tool execution
   setupMCPHandlers()
+
+  // Setup Project Analyzer handlers for intelligent context injection
+  setupProjectAnalyzerHandlers()
 
   // Setup Persona handlers for AI personalities
   setupPersonaHandlers()

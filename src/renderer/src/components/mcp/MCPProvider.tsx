@@ -23,7 +23,7 @@ interface MCPContextValue {
   // Actions
   initialize: () => Promise<void>
   reconnect: () => Promise<void>
-  getSystemPrompt: () => Promise<string>
+  getSystemPrompt: (workingDirectory?: string) => Promise<string>
   requestTool: (
     toolName: string,
     args: Record<string, unknown>,
@@ -131,9 +131,9 @@ export function MCPProvider({ children, autoInit = true }: MCPProviderProps) {
     }
   }, [])
 
-  // Get system prompt (refreshes from server)
-  const getSystemPrompt = useCallback(async (): Promise<string> => {
-    const prompt = await window.api.mcp.getSystemPrompt()
+  // Get system prompt (refreshes from server, optionally with project context)
+  const getSystemPrompt = useCallback(async (workingDirectory?: string): Promise<string> => {
+    const prompt = await window.api.mcp.getSystemPrompt(workingDirectory)
     setSystemPrompt(prompt)
     return prompt
   }, [])

@@ -171,7 +171,7 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
     setPendingTool
   } = useAgentContext()
   
-  const { connected: mcpConnected, tools: mcpTools } = useMCP()
+  const { connected: mcpConnected, tools: mcpTools, getSystemPrompt } = useMCP()
   
   // Work Journal Integration
   const {
@@ -568,18 +568,48 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
    * 2. Adding pending tool results if present
    * 3. Validating and fixing ordering before returning
    * 4. Phase 4: Auto-truncating if context exceeds model limits
+   * 5. Project Intelligence: Fetching enhanced MCP system prompt with project context
    */
-  const buildContextMessages = useCallback((agent: Agent): { 
+  const buildContextMessages = useCallback(async (agent: Agent): Promise<{ 
     messages: Array<{ role: string; content: string }>
     truncationNotification: string | null 
-  } => {
+  }> => {
     const messages: Array<{ role: string; content: string }> = []
     
     // Diagnostic: Log working directory from agent config
-    console.log('[AgentRunner] Agent working directory:', agent.config.context.workingDirectory)
+    const workingDirectory = agent.config.context.workingDirectory
+    console.log('[AgentRunner] Agent working directory:', workingDirectory)
+    
+    // Fetch enhanced MCP system prompt with project intelligence
+    // This includes tool definitions AND project-specific context when working directory is recognized
+    let enhancedMCPPrompt = ''
+    console.log('[AgentRunner] mcpConnected:', mcpConnected)
+    if (mcpConnected) {
+      try {
+        console.log('[AgentRunner] Calling getSystemPrompt with workingDirectory:', workingDirectory)
+        enhancedMCPPrompt = await getSystemPrompt(workingDirectory || undefined)
+        console.log('[AgentRunner] Enhanced MCP prompt loaded, length:', enhancedMCPPrompt?.length || 0)
+        console.log('[AgentRunner] Prompt contains Project Intelligence:', enhancedMCPPrompt?.includes('ArborChat Project Intelligence'))
+        if (workingDirectory && enhancedMCPPrompt?.includes('ArborChat Project Intelligence')) {
+          console.log('[AgentRunner] ✅ Project intelligence injected for:', workingDirectory)
+        } else if (workingDirectory) {
+          console.warn('[AgentRunner] ⚠️ Working directory set but no project intelligence found')
+          console.log('[AgentRunner] Prompt preview:', enhancedMCPPrompt?.substring(0, 500))
+        }
+      } catch (err) {
+        console.warn('[AgentRunner] Failed to load enhanced MCP prompt:', err)
+      }
+    } else {
+      console.warn('[AgentRunner] MCP not connected, skipping enhanced prompt')
+    }
+    
+    // Build combined system prompt: Agent base prompt + MCP tools with project intelligence
+    const combinedSystemPrompt = enhancedMCPPrompt
+      ? `${agent.systemPrompt}\n\n${enhancedMCPPrompt}`
+      : agent.systemPrompt
     
     // System prompt
-    messages.push({ role: 'system', content: agent.systemPrompt })
+    messages.push({ role: 'system', content: combinedSystemPrompt })
     
     // Seed messages from context
     for (const seedMsg of agent.config.context.seedMessages) {
@@ -635,7 +665,7 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
       messages: truncationResult.messages, 
       truncationNotification: truncationResult.notification 
     }
-  }, [])
+  }, [mcpConnected, getSystemPrompt])
 
   /**
    * Execute the agent loop - core AI interaction
@@ -656,7 +686,8 @@ export function useAgentRunner(agentId: string): UseAgentRunnerResult {
       setRunnerState(prev => ({ ...prev, isRunning: true, isStreaming: true, isRetrying: false, error: null }))
       
       // Build context (Phase 4: now returns object with messages and truncation info)
-      const { messages, truncationNotification } = buildContextMessages(agent)
+      // Project Intelligence: Now async to fetch enhanced MCP prompt with project context
+      const { messages, truncationNotification } = await buildContextMessages(agent)
       
       // Phase 4: Add truncation notification step if messages were truncated
       if (truncationNotification) {

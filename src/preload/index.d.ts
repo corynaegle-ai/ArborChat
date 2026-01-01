@@ -629,6 +629,18 @@ interface TokenizerAPI {
   getStats: () => Promise<TokenizerStats>
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Project Analyzer Types - Project-aware context injection for agents
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** API for project-aware context injection. */
+interface ProjectAnalyzerAPI {
+  /** Get project intelligence context for a working directory */
+  getContext: (workingDirectory: string) => Promise<string | null>
+  /** Check if a directory is a known project with custom patterns */
+  isKnownProject: (workingDirectory: string) => Promise<boolean>
+}
+
 // Notification Types
 interface DesktopNotificationPayload {
   title: string
@@ -732,7 +744,7 @@ interface MCPAPI {
   init: () => Promise<MCPInitResult>
   getTools: () => Promise<MCPToolDefinition[]>
   getStatus: () => Promise<MCPStatusResult>
-  getSystemPrompt: () => Promise<string>
+  getSystemPrompt: (workingDirectory?: string) => Promise<string>
   requestTool: (
     serverName: string,
     toolName: string,
@@ -833,6 +845,8 @@ declare global {
       arborMemory: ArborMemoryAPI
       // Tokenizer API
       tokenizer: TokenizerAPI
+      // Project Analyzer API
+      projectAnalyzer: ProjectAnalyzerAPI
     }
   }
 }
@@ -912,5 +926,7 @@ export type {
   ArborMemoryAPI,
   // Tokenizer types
   TokenizerStats,
-  TokenizerAPI
+  TokenizerAPI,
+  // Project Analyzer types
+  ProjectAnalyzerAPI
 }

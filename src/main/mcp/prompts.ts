@@ -1,6 +1,7 @@
 // src/main/mcp/prompts.ts
 
 import { ToolDefinition } from './types'
+import { getProjectContext } from '../projectAnalyzer'
 
 /**
  * Generate a system prompt that describes available MCP tools to the AI
@@ -146,4 +147,35 @@ After outputting a tool_use block, ArborChat will execute it and provide you wit
  */
 export function generateToolList(tools: ToolDefinition[]): string {
   return tools.map((t) => `- ${t.name}: ${t.description || 'No description'}`).join('\n')
+}
+
+/**
+ * Generate complete system prompt with project intelligence
+ * 
+ * This function enhances the base tool system prompt with project-specific
+ * context when the working directory is a recognized project. This helps
+ * agents search more efficiently by providing upfront knowledge about
+ * the codebase structure.
+ * 
+ * @param tools - Available MCP tools
+ * @param workingDirectory - Optional project root directory
+ * @returns Enhanced system prompt with project context prepended
+ */
+export function generateEnhancedSystemPrompt(
+  tools: ToolDefinition[],
+  workingDirectory?: string
+): string {
+  console.log('[MCP Prompts] generateEnhancedSystemPrompt called with workingDirectory:', workingDirectory)
+  
+  const toolPrompt = generateToolSystemPrompt(tools)
+  const projectContext = getProjectContext(workingDirectory)
+  
+  console.log('[MCP Prompts] projectContext returned:', projectContext ? `${projectContext.length} chars` : 'null')
+  
+  if (projectContext) {
+    console.log('[MCP Prompts] ✅ Injecting project context for:', workingDirectory)
+    return `${projectContext}\n\n${toolPrompt}`
+  }
+  
+  return toolPrompt
 }
